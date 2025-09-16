@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyseur Débit & pH</title>
+    <meta name="description" content="Analysez simultanément vos données de débit et pH avec synthèses temporelles et alertes de seuil">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- XLSX et FileSaver CDN avec defer -->
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: { 50:'#f0f9ff',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8' },
+                        warning: { 50:'#fefce8',200:'#fde047',500:'#eab308' },
+                        danger: { 50:'#fef2f2',200:'#fecaca',500:'#ef4444' }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .upload-zone { border: 2px dashed #d1d5db; transition: all 0.3s ease; }
+        .upload-zone:hover { border-color: #3b82f6; background-color: #f8fafc; }
+        .upload-zone.dragover { border-color: #2563eb; background-color: #eff6ff; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        .table-header { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .alert-row { background-color: #fef2f2 !important; border-left: 4px solid #ef4444; }
+        .warning-row { background-color: #fefce8 !important; border-left: 4px solid #eab308; }
+        .nav-tab { transition: all 0.3s ease; }
+        .nav-tab.active { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(59,130,246,.3); }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">📊 Analyseur Débit & pH</h1>
+            <p class="text-gray-600 text-lg">Analyse simultanée avec synthèses temporelles et alertes de seuil</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto">
+            <!-- Upload Section -->
+            <section class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">📁 Importation des fichiers</h2>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Upload Débit -->
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-700 mb-3">💧 Fichier Débit (dernière valeur/jour)</h3>
+                        <div id="uploadZoneDebit" class="upload-zone rounded-lg p-6 text-center cursor-pointer">
+                            <div class="mb-3">
+                                <svg class="mx-auto h-10 w-10 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.413V13H5.5z"/>
+                                </svg>
+                            </div>
+                            <p class="text-sm text-gray-600">Déposez le fichier débit ici</p>
+                            <p class="text-xs text-gray-400 mt-1">Seuil d'alerte: > 220</p>
+                        </div>
+                        <input type="file" id="fileInputDebit" accept=".xlsx,.xls,.csv" class="hidden">
+                        <div id="fileInfoDebit" class="mt-3 hidden">
+                            <div class="flex items-center p-2 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+                                <span id="fileNameDebit" class="text-blue-800 font-medium"></span>
+                                <span id="fileSizeDebit" class="text-blue-600 ml-2"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload pH -->
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-700 mb-3">🧪 Fichier pH (moyenne/jour)</h3>
+                        <div id="uploadZonePh" class="upload-zone rounded-lg p-6 text-center cursor-pointer">
+                            <div class="mb-3">
+                                <svg class="mx-auto h-10 w-10 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.413V13H5.5z"/>
+                                </svg>
+                            </div>
+                            <p class="text-sm text-gray-600">Déposez le fichier pH ici</p>
+                            <p class="text-xs text-gray-400 mt-1">Seuil d'alerte: 5.5 - 8.5</p>
+                        </div>
+                        <input type="file" id="fileInputPh" accept=".xlsx,.xls,.csv" class="hidden">
+                        <div id="fileInfoPh" class="mt-3 hidden">
+                            <div class="flex items-center p-2 bg-green-50 border border-green-200 rounded-lg text-sm">
+                                <span id="fileNamePh" class="text-green-800 font-medium"></span>
+                                <span id="fileSizePh" class="text-green-600 ml-2"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtres de dates -->
+                <div class="mt-8 grid sm:grid-cols-[1fr_1fr_auto_auto] gap-3 items-end">
+                    <div>
+                        <label for="startDate" class="block text-sm text-gray-600 mb-1">Du</label>
+                        <input id="startDate" type="date" class="w-full border rounded-lg px-3 py-2"/>
+                    </div>
+                    <div>
+                        <label for="endDate" class="block text-sm text-gray-600 mb-1">Au</label>
+                        <input id="endDate" type="date" class="w-full border rounded-lg px-3 py-2"/>
+                    </div>
+                    <button id="applyFilterBtn" class="bg-primary-500 hover:bg-primary-600 text-white py-2 px-4 rounded-lg font-medium transition-colors" disabled>Appliquer</button>
+                    <button id="resetFilterBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-4 rounded-lg font-medium transition-colors" disabled>Réinitialiser</button>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <button id="analyzeBtn" class="bg-primary-500 hover:bg-primary-600 text-white py-3 px-8 rounded-lg font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
+                        🔍 Analyser les données
+                    </button>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="hidden">
+                <!-- Navigation Tabs -->
+                <div class="bg-white rounded-t-lg shadow-lg">
+                    <div class="flex border-b border-gray-200">
+                        <button class="nav-tab active px-6 py-3 font-medium rounded-tl-lg" data-tab="daily">📅 Données journalières</button>
+                        <button class="nav-tab px-6 py-3 font-medium" data-tab="synthesis">📈 Synthèses temporelles</button>
+                        <button class="nav-tab px-6 py-3 font-medium" data-tab="alerts">⚠️ Alertes</button>
+                    </div>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="bg-white rounded-b-lg shadow-lg">
+                    <!-- Daily Data Tab -->
+                    <div id="dailyTab" class="tab-content p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-semibold text-gray-800">📊 Données journalières</h2>
+                            <button id="exportDailyBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                📥 Exporter CSV
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- Débit Table -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-blue-600 mb-3">💧 Débit (dernière valeur/jour)</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                                        <thead class="table-header text-white">
+                                            <tr>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Date</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Valeur</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">État</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="debitTable" class="divide-y divide-gray-200"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- pH Table -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-green-600 mb-3">🧪 pH (moyenne/jour)</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                                        <thead class="table-header text-white">
+                                            <tr>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Date</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Moyenne</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">État</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="phTable" class="divide-y divide-gray-200"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Synthesis Tab -->
+                    <div id="synthesisTab" class="tab-content p-6 hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-2xl font-semibold text-gray-800">📈 Synthèses temporelles</h2>
+                            <button id="exportSynthesisBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                📥 Exporter CSV
+                            </button>
+                        </div>
+
+                        <div class="space-y-6">
+                            <!-- Synthèse hebdomadaire -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-700 mb-3">📅 Synthèse hebdomadaire</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                                        <thead class="table-header text-white">
+                                            <tr>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Semaine</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Débit Moy.</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">pH Moy.</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Alertes Débit</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Alertes pH</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="weeklyTable" class="divide-y divide-gray-200"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Synthèse mensuelle -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-700 mb-3">📊 Synthèse mensuelle</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                                        <thead class="table-header text-white">
+                                            <tr>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Mois</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Débit Moy.</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">pH Moy.</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Alertes Débit</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Alertes pH</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="monthlyTable" class="divide-y divide-gray-200"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Synthèse annuelle -->
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-700 mb-3">📈 Synthèse annuelle</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                                        <thead class="table-header text-white">
+                                            <tr>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Année</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Débit Moy.</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">pH Moy.</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Alertes Débit</th>
+                                                <th class="px-4 py-2 text-xs font-medium uppercase">Alertes pH</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="yearlyTable" class="divide-y divide-gray-200"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alerts Tab -->
+                    <div id="alertsTab" class="tab-content p-6 hidden">
+                        <h2 class="text-2xl font-semibold text-gray-800 mb-4">⚠️ Alertes et anomalies</h2>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                            <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                                <div class="text-2xl font-bold text-red-600" id="alertsDebitCount">0</div>
+                                <div class="text-sm text-red-600">Alertes débit (> 220)</div>
+                            </div>
+                            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                                <div class="text-2xl font-bold text-yellow-600" id="alertsPhCount">0</div>
+                                <div class="text-sm text-yellow-600">Alertes pH (< 5.5 ou > 8.5)</div>
+                            </div>
+                            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <div class="text-2xl font-bold text-gray-600" id="totalAlertsCount">0</div>
+                                <div class="text-sm text-gray-600">Total alertes</div>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                                <thead class="table-header text-white">
+                                    <tr>
+                                        <th class="px-4 py-2 text-xs font-medium uppercase">Date</th>
+                                        <th class="px-4 py-2 text-xs font-medium uppercase">Type</th>
+                                        <th class="px-4 py-2 text-xs font-medium uppercase">Valeur</th>
+                                        <th class="px-4 py-2 text-xs font-medium uppercase">Seuil</th>
+                                        <th class="px-4 py-2 text-xs font-medium uppercase">Écart</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="alertsTable" class="divide-y divide-gray-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Attendre que tous les scripts CDN soient chargés
+        window.addEventListener('load', function() {
+            console.log('Application chargée, XLSX disponible:', typeof XLSX !== 'undefined');
+            
+            // Variables globales
+            let debitData = [];
+            let phData = [];
+            let processedData = {
+                daily: { debit: [], ph: [] },
+                weekly: [],
+                monthly: [],
+                yearly: [],
+                alerts: []
+            };
+
+            // Filtres actifs
+            let filterStart = null; // Date objet (min)
+            let filterEnd = null;   // Date objet (max, 23:59:59)
+
+            // Seuils d'alerte
+            const DEBIT_THRESHOLD = 220;
+            const PH_MIN = 5.5;
+            const PH_MAX = 8.5;
+
+            // Éléments DOM
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const resultsSection = document.getElementById('resultsSection');
+            const startDateInput = document.getElementById('startDate');
+            const endDateInput = document.getElementById('endDate');
+            const applyFilterBtn = document.getElementById('applyFilterBtn');
+            const resetFilterBtn = document.getElementById('resetFilterBtn');
+
+            // Configuration des uploads
+            setupFileUpload('Debit', (data) => { debitData = data; checkAnalyzeReady(); });
+            setupFileUpload('Ph', (data) => { phData = data; checkAnalyzeReady(); });
+
+            // Configuration des onglets
+            setupTabs();
+
+            function setupFileUpload(type, callback) {
+                const uploadZone = document.getElementById(`uploadZone${type}`);
+                const fileInput = document.getElementById(`fileInput${type}`);
+                const fileInfo = document.getElementById(`fileInfo${type}`);
+                const fileName = document.getElementById(`fileName${type}`);
+                const fileSize = document.getElementById(`fileSize${type}`);
+
+                uploadZone.addEventListener('click', () => fileInput.click());
+                uploadZone.addEventListener('dragover', (e) => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+                uploadZone.addEventListener('dragleave', () => { uploadZone.classList.remove('dragover'); });
+                uploadZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadZone.classList.remove('dragover');
+                    if (e.dataTransfer.files.length > 0) {
+                        handleFile(e.dataTransfer.files[0], type, callback, fileName, fileSize, fileInfo);
+                    }
+                });
+                fileInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        handleFile(e.target.files[0], type, callback, fileName, fileSize, fileInfo);
+                    }
+                });
+            }
+
+            function handleFile(file, type, callback, fileNameEl, fileSizeEl, fileInfoEl) {
+                console.log(`Fichier ${type} sélectionné:`, file.name);
+                fileNameEl.textContent = file.name;
+                fileSizeEl.textContent = `(${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                fileInfoEl.classList.remove('hidden');
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        let data;
+                        if (file.name.endsWith('.csv')) {
+                            const csv = e.target.result;
+                            const lines = csv.split(/\r?\n/);
+                            data = lines.map(line => line.split(',').map(cell => cell.trim()));
+                        } else {
+                            const workbook = XLSX.read(e.target.result, { type: 'array' });
+                            const sheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[sheetName];
+                            data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        }
+                        const cleanData = data.filter(row => row && row.length > 1 && row[0] && row[1]);
+                        console.log(`Données ${type} chargées:`, cleanData.length, 'lignes');
+                        callback(cleanData);
+                    } catch (error) {
+                        console.error(`Erreur ${type}:`, error);
+                        alert(`Erreur lors du traitement du fichier ${type}`);
+                    }
+                };
+                if (file.name.endsWith('.csv')) reader.readAsText(file);
+                else reader.readAsArrayBuffer(file);
+            }
+
+            function checkAnalyzeReady() {
+                const ready = debitData.length > 0 && phData.length > 0;
+                analyzeBtn.disabled = !ready;
+                applyFilterBtn.disabled = !ready;
+                resetFilterBtn.disabled = !ready;
+            }
+
+            function setupTabs() {
+                const tabs = document.querySelectorAll('.nav-tab');
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        const targetTab = tab.dataset.tab;
+                        tabs.forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+                        document.getElementById(targetTab + 'Tab').classList.remove('hidden');
+                    });
+                });
+            }
+
+            // Analyse des données
+            analyzeBtn.addEventListener('click', function() {
+                console.log('Début de l\'analyse...');
+                if (debitData.length === 0 || phData.length === 0) { alert('Les deux fichiers sont requis pour l\'analyse'); return; }
+
+                // Traitement des données brutes en journalier
+                processedData.daily.debit = processDebitData(debitData);
+                processedData.daily.ph = processPhData(phData);
+
+                // Initialiser les bornes de filtre (min/max)
+                const allDates = getAllDatesSorted();
+                if (allDates.length > 0) {
+                    const minD = allDates[0];
+                    const maxD = allDates[allDates.length - 1];
+                    startDateInput.value = toInputDate(minD);
+                    endDateInput.value = toInputDate(maxD);
+                    filterStart = startOfDay(minD);
+                    filterEnd = endOfDay(maxD);
+                }
+
+                rebuildAllViews();
+                resultsSection.classList.remove('hidden');
+            });
+
+            // Appliquer/Réinitialiser filtres
+            applyFilterBtn.addEventListener('click', () => {
+                const s = startDateInput.value ? new Date(startDateInput.value) : null;
+                const e = endDateInput.value ? new Date(endDateInput.value) : null;
+                filterStart = s ? startOfDay(s) : null;
+                filterEnd   = e ? endOfDay(e)   : null;
+                rebuildAllViews();
+            });
+
+            resetFilterBtn.addEventListener('click', () => {
+                const all = getAllDatesSorted();
+                if (all.length) {
+                    filterStart = startOfDay(all[0]);
+                    filterEnd = endOfDay(all[all.length - 1]);
+                    startDateInput.value = toInputDate(all[0]);
+                    endDateInput.value = toInputDate(all[all.length - 1]);
+                } else {
+                    filterStart = filterEnd = null;
+                    startDateInput.value = endDateInput.value = '';
+                }
+                rebuildAllViews();
+            });
+
+            function rebuildAllViews() {
+                // Génération des synthèses temporelles sur les données filtrées
+                generateTimeSyntheses();
+                // Génération des alertes
+                generateAlerts();
+                // Affichages
+                displayResults();
+                // Boutons d'export
+                setupExports();
+            }
+
+            // ---------- Parsing & utils dates ----------
+            function parseDate(dateStr) {
+                // Parse date format dd/MM/yyyy HH:mm:ss.SSS (HH:mm:ss facultatif)
+                const parts = dateStr.trim().split(' ');
+                const datePart = parts[0];
+                const timePart = parts[1] ? parts[1].split('.')[0] : '00:00:00';
+                const [day, month, year] = datePart.split('/');
+                const [hours, minutes, seconds] = timePart.split(':');
+                return new Date(Number(year), Number(month) - 1, Number(day), Number(hours||0), Number(minutes||0), Number(seconds||0));
+            }
+            function formatDate(date) {
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${day}/${month}/${year}`;
+            }
+            function toInputDate(d) {
+                const y = d.getFullYear();
+                const m = String(d.getMonth()+1).padStart(2,'0');
+                const da = String(d.getDate()).padStart(2,'0');
+                return `${y}-${m}-${da}`;
+            }
+            function startOfDay(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0,0,0); }
+            function endOfDay(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59); }
+            function inRange(dateStr) {
+                const d = parseDate(`${dateStr} 00:00:00`);
+                if (filterStart && d < filterStart) return false;
+                if (filterEnd && d > filterEnd) return false;
+                return true;
+            }
+            function getAllDatesSorted() {
+                const set = new Set([
+                    ...processedData.daily.debit.map(d => d.date),
+                    ...processedData.daily.ph.map(d => d.date)
+                ]);
+                return Array.from(set)
+                    .map(ds => parseDate(`${ds} 00:00:00`))
+                    .sort((a,b)=>a-b);
+            }
+
+            // ---------- Traitements journalier ----------
+            function processDebitData(data) {
+                const dailyData = {};
+                data.forEach((row, index) => {
+                    if (index === 0) return; // Skip header
+                    try {
+                        const dateStr = row[0];
+                        const value = parseFloat(String(row[1]).replace(',', '.'));
+                        if (isNaN(value)) return;
+                        const date = parseDate(dateStr);
+                        const dayKey = formatDate(date);
+                        if (!dailyData[dayKey]) dailyData[dayKey] = [];
+                        dailyData[dayKey].push({ time: date, value });
+                    } catch (error) { console.error('Erreur parsing débit:', error); }
+                });
+                const result = [];
+                Object.keys(dailyData).sort((a,b)=>parseDate(`${a} 00:00:00`)-parseDate(`${b} 00:00:00`)).forEach(day => {
+                    const dayValues = dailyData[day].sort((a, b) => a.time - b.time);
+                    const lastValue = dayValues[dayValues.length - 1].value;
+                    const isAlert = lastValue > DEBIT_THRESHOLD;
+                    result.push({ date: day, value: lastValue, isAlert, count: dayValues.length });
+                });
+                return result;
+            }
+
+            function processPhData(data) {
+                const dailyData = {};
+                data.forEach((row, index) => {
+                    if (index === 0) return; // Skip header
+                    try {
+                        const dateStr = row[0];
+                        const value = parseFloat(String(row[1]).replace(',', '.'));
+                        if (isNaN(value)) return;
+                        const date = parseDate(dateStr);
+                        const dayKey = formatDate(date);
+                        if (!dailyData[dayKey]) dailyData[dayKey] = [];
+                        dailyData[dayKey].push(value);
+                    } catch (error) { console.error('Erreur parsing pH:', error); }
+                });
+                const result = [];
+                Object.keys(dailyData).sort((a,b)=>parseDate(`${a} 00:00:00`)-parseDate(`${b} 00:00:00`)).forEach(day => {
+                    const values = dailyData[day];
+                    const average = values.reduce((a, b) => a + b, 0) / values.length;
+                    const isAlert = average < PH_MIN || average > PH_MAX;
+                    result.push({ date: day, value: average, isAlert, count: values.length });
+                });
+                return result;
+            }
+
+            // ---------- Synthèses (tri pro) ----------
+            function isoWeek(date) {
+                const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+                const dayNum = d.getUTCDay() || 7;
+                d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+                const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
+                const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+                return { week: weekNo, year: d.getUTCFullYear() };
+            }
+            function weekStart(date) {
+                const d = new Date(date);
+                const day = (d.getDay() || 7); // 1..7 (lundi=1 si on considère lundi premier jour)
+                const diff = day - 1; // ramener au lundi
+                d.setDate(d.getDate() - diff);
+                d.setHours(0,0,0,0);
+                return d;
+            }
+            function monthKey(date) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`; }
+            function monthLabel(date) {
+                const months = ['Jan','Fév','Mar','Avr','Mai','Jui','Jul','Aoû','Sep','Oct','Nov','Déc'];
+                return `${months[date.getMonth()]} ${date.getFullYear()}`;
+            }
+
+            function generateTimeSyntheses() {
+                const weeklyMap = new Map();  // key = `${year}-W${week}`, val = {start,label,debit[],ph[],...}
+                const monthlyMap = new Map(); // key = `YYYY-MM`
+                const yearlyMap = new Map();  // key = `YYYY`
+
+                // Parcourir toutes les dates présentes dans l'une ou l'autre série (puis filtrer)
+                const allDates = new Set([
+                    ...processedData.daily.debit.map(d => d.date),
+                    ...processedData.daily.ph.map(d => d.date)
+                ]);
+
+                const sortedDates = Array.from(allDates).sort((a,b)=>parseDate(`${a} 00:00:00`) - parseDate(`${b} 00:00:00`));
+
+                for (const dateStr of sortedDates) {
+                    if (!inRange(dateStr)) continue;
+                    const dObj = parseDate(`${dateStr} 00:00:00`);
+
+                    const debitDay = processedData.daily.debit.find(d => d.date === dateStr);
+                    const phDay = processedData.daily.ph.find(d => d.date === dateStr);
+
+                    // Weekly
+                    const {week, year} = isoWeek(dObj);
+                    const wKey = `${year}-W${String(week).padStart(2,'0')}`;
+                    if (!weeklyMap.has(wKey)) weeklyMap.set(wKey, { start: weekStart(dObj), label: `S${week}-${year}`, debit: [], ph: [], debitAlerts:0, phAlerts:0 });
+                    const w = weeklyMap.get(wKey);
+                    if (debitDay){ w.debit.push(debitDay.value); if (debitDay.isAlert) w.debitAlerts++; }
+                    if (phDay){ w.ph.push(phDay.value); if (phDay.isAlert) w.phAlerts++; }
+
+                    // Monthly
+                    const mKey = monthKey(dObj);
+                    if (!monthlyMap.has(mKey)) monthlyMap.set(mKey, { start: new Date(dObj.getFullYear(), dObj.getMonth(), 1), label: monthLabel(dObj), debit:[], ph:[], debitAlerts:0, phAlerts:0 });
+                    const m = monthlyMap.get(mKey);
+                    if (debitDay){ m.debit.push(debitDay.value); if (debitDay.isAlert) m.debitAlerts++; }
+                    if (phDay){ m.ph.push(phDay.value); if (phDay.isAlert) m.phAlerts++; }
+
+                    // Yearly
+                    const yKey = String(dObj.getFullYear());
+                    if (!yearlyMap.has(yKey)) yearlyMap.set(yKey, { start: new Date(dObj.getFullYear(),0,1), label: yKey, debit:[], ph:[], debitAlerts:0, phAlerts:0 });
+                    const y = yearlyMap.get(yKey);
+                    if (debitDay){ y.debit.push(debitDay.value); if (debitDay.isAlert) y.debitAlerts++; }
+                    if (phDay){ y.ph.push(phDay.value); if (phDay.isAlert) y.phAlerts++; }
+                }
+
+                processedData.weekly = Array.from(weeklyMap.values())
+                    .sort((a,b)=>a.start-b.start)
+                    .map(g => ({
+                        period: g.label,
+                        start: g.start,
+                        debitAvg: g.debit.length ? g.debit.reduce((a,b)=>a+b,0)/g.debit.length : 0,
+                        phAvg: g.ph.length ? g.ph.reduce((a,b)=>a+b,0)/g.ph.length : 0,
+                        debitAlerts: g.debitAlerts,
+                        phAlerts: g.phAlerts
+                    }));
+                processedData.monthly = Array.from(monthlyMap.values())
+                    .sort((a,b)=>a.start-b.start)
+                    .map(g => ({
+                        period: g.label,
+                        start: g.start,
+                        debitAvg: g.debit.length ? g.debit.reduce((a,b)=>a+b,0)/g.debit.length : 0,
+                        phAvg: g.ph.length ? g.ph.reduce((a,b)=>a+b,0)/g.ph.length : 0,
+                        debitAlerts: g.debitAlerts,
+                        phAlerts: g.phAlerts
+                    }));
+                processedData.yearly = Array.from(yearlyMap.values())
+                    .sort((a,b)=>a.start-b.start)
+                    .map(g => ({
+                        period: g.label,
+                        start: g.start,
+                        debitAvg: g.debit.length ? g.debit.reduce((a,b)=>a+b,0)/g.debit.length : 0,
+                        phAvg: g.ph.length ? g.ph.reduce((a,b)=>a+b,0)/g.ph.length : 0,
+                        debitAlerts: g.debitAlerts,
+                        phAlerts: g.phAlerts
+                    }));
+            }
+
+            // ---------- Alertes ----------
+            function generateAlerts() {
+                processedData.alerts = [];
+                // Débit
+                processedData.daily.debit.forEach(day => {
+                    if (!inRange(day.date)) return;
+                    if (day.isAlert) {
+                        processedData.alerts.push({
+                            date: day.date,
+                            type: 'Débit',
+                            value: day.value,
+                            threshold: `> ${DEBIT_THRESHOLD}`,
+                            deviation: (day.value - DEBIT_THRESHOLD).toFixed(2),
+                            severity: 'high'
+                        });
+                    }
+                });
+                // pH
+                processedData.daily.ph.forEach(day => {
+                    if (!inRange(day.date)) return;
+                    if (day.isAlert) {
+                        const deviation = day.value < PH_MIN ? (day.value - PH_MIN).toFixed(2) : (day.value - PH_MAX).toFixed(2);
+                        processedData.alerts.push({
+                            date: day.date,
+                            type: 'pH',
+                            value: day.value,
+                            threshold: `${PH_MIN} - ${PH_MAX}`,
+                            deviation: deviation,
+                            severity: 'medium'
+                        });
+                    }
+                });
+                // Plus récent en premier
+                processedData.alerts.sort((a, b) => parseDate(b.date + ' 00:00:00') - parseDate(a.date + ' 00:00:00'));
+            }
+
+            // ---------- Affichages ----------
+            function displayResults() {
+                displayDailyData();
+                displayTimeSyntheses();
+                displayAlerts();
+            }
+
+            function displayDailyData() {
+                const debitTable = document.getElementById('debitTable');
+                const phTable = document.getElementById('phTable');
+
+                const debitRows = processedData.daily.debit
+                    .filter(d => inRange(d.date))
+                    .sort((a,b)=>parseDate(a.date+' 00:00:00') - parseDate(b.date+' 00:00:00'))
+                    .map(day => `
+                    <tr class="${day.isAlert ? 'alert-row' : ''}">
+                        <td class="px-4 py-2 text-sm">${day.date}</td>
+                        <td class="px-4 py-2 text-sm font-medium">${day.value.toFixed(2)}</td>
+                        <td class="px-4 py-2 text-sm">
+                            ${day.isAlert ? 
+                                '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">⚠️ Alerte</span>' : 
+                                '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">✅ OK</span>'
+                            }
+                        </td>
+                    </tr>`).join('');
+                debitTable.innerHTML = debitRows;
+
+                const phRows = processedData.daily.ph
+                    .filter(d => inRange(d.date))
+                    .sort((a,b)=>parseDate(a.date+' 00:00:00') - parseDate(b.date+' 00:00:00'))
+                    .map(day => `
+                    <tr class="${day.isAlert ? 'alert-row' : ''}">
+                        <td class="px-4 py-2 text-sm">${day.date}</td>
+                        <td class="px-4 py-2 text-sm font-medium">${day.value.toFixed(2)}</td>
+                        <td class="px-4 py-2 text-sm">
+                            ${day.isAlert ? 
+                                '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">⚠️ Alerte</span>' : 
+                                '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">✅ OK</span>'
+                            }
+                        </td>
+                    </tr>`).join('');
+                phTable.innerHTML = phRows;
+            }
+
+            function displayTimeSyntheses() {
+                const weeklyTable = document.getElementById('weeklyTable');
+                const monthlyTable = document.getElementById('monthlyTable');
+                const yearlyTable = document.getElementById('yearlyTable');
+
+                weeklyTable.innerHTML = processedData.weekly.map(week => `
+                    <tr>
+                        <td class="px-4 py-2 text-sm font-medium">${week.period}</td>
+                        <td class="px-4 py-2 text-sm">${week.debitAvg.toFixed(2)}</td>
+                        <td class="px-4 py-2 text-sm">${week.phAvg.toFixed(2)}</td>
+                        <td class="px-4 py-2 text-sm">${week.debitAlerts}</td>
+                        <td class="px-4 py-2 text-sm">${week.phAlerts}</td>
+                    </tr>`).join('');
+
+                monthlyTable.innerHTML = processedData.monthly.map(month => `
+                    <tr>
+                        <td class="px-4 py-2 text-sm font-medium">${month.period}</td>
+                        <td class="px-4 py-2 text-sm">${month.debitAvg.toFixed(2)}</td>
+                        <td class="px-4 py-2 text-sm">${month.phAvg.toFixed(2)}</td>
+                        <td class="px-4 py-2 text-sm">${month.debitAlerts}</td>
+                        <td class="px-4 py-2 text-sm">${month.phAlerts}</td>
+                    </tr>`).join('');
+
+                yearlyTable.innerHTML = processedData.yearly.map(year => `
+                    <tr>
+                        <td class="px-4 py-2 text-sm font-medium">${year.period}</td>
+                        <td class="px-4 py-2 text-sm">${year.debitAvg.toFixed(2)}</td>
+                        <td class="px-4 py-2 text-sm">${year.phAvg.toFixed(2)}</td>
+                        <td class="px-4 py-2 text-sm">${year.debitAlerts}</td>
+                        <td class="px-4 py-2 text-sm">${year.phAlerts}</td>
+                    </tr>`).join('');
+            }
+
+            function displayAlerts() {
+                const debitAlerts = processedData.alerts.filter(a => a.type === 'Débit').length;
+                const phAlerts = processedData.alerts.filter(a => a.type === 'pH').length;
+                
+                document.getElementById('alertsDebitCount').textContent = debitAlerts;
+                document.getElementById('alertsPhCount').textContent = phAlerts;
+                document.getElementById('totalAlertsCount').textContent = processedData.alerts.length;
+                
+                const alertsTable = document.getElementById('alertsTable');
+                alertsTable.innerHTML = processedData.alerts.map(alert => `
+                    <tr class="${alert.severity === 'high' ? 'alert-row' : 'warning-row'}">
+                        <td class="px-4 py-2 text-sm">${alert.date}</td>
+                        <td class="px-4 py-2 text-sm font-medium">${alert.type}</td>
+                        <td class="px-4 py-2 text-sm">${Number(alert.value).toFixed(2)}</td>
+                        <td class="px-4 py-2 text-sm">${alert.threshold}</td>
+                        <td class="px-4 py-2 text-sm font-medium">${alert.deviation}</td>
+                    </tr>`).join('');
+            }
+
+            // ---------- Exports ----------
+            function setupExports() {
+                document.getElementById('exportDailyBtn').onclick = () => {
+                    const csvData = generateDailyCsv();
+                    downloadCsv(csvData, 'donnees_journalieres.csv');
+                };
+                document.getElementById('exportSynthesisBtn').onclick = () => {
+                    const csvData = generateSynthesisCsv();
+                    downloadCsv(csvData, 'syntheses_temporelles.csv');
+                };
+            }
+
+            function csvHeaderInfo() {
+                const now = new Date();
+                const range = `${startDateInput.value || 'N/A'} -> ${endDateInput.value || 'N/A'}`;
+                return [
+                    '# Export ; Analyseur Débit & pH',
+                    `# Généré le ; ${now.toLocaleString('fr-FR')}`,
+                    `# Période filtrée ; ${range}`,
+                    '# ---'
+                ].join('\r\n');
+            }
+
+            function generateDailyCsv() {
+                const sep = ';';
+                const header = csvHeaderInfo();
+                let csv = `${header}\r\nDate${sep}Débit (dernière valeur)${sep}État Débit${sep}pH (moyenne)${sep}État pH\r\n`;
+
+                // Combiner et trier par date (asc) puis filtrer
+                const allDates = new Set([
+                    ...processedData.daily.debit.map(d => d.date),
+                    ...processedData.daily.ph.map(d => d.date)
+                ]);
+                const sorted = Array.from(allDates)
+                    .filter(ds => inRange(ds))
+                    .sort((a,b)=>parseDate(a+' 00:00:00') - parseDate(b+' 00:00:00'));
+
+                for (const date of sorted) {
+                    const debitDay = processedData.daily.debit.find(d => d.date === date);
+                    const phDay = processedData.daily.ph.find(d => d.date === date);
+                    const line = [
+                        date,
+                        debitDay ? debitDay.value.toFixed(2) : 'N/A',
+                        debitDay ? (debitDay.isAlert ? 'ALERTE' : 'OK') : 'N/A',
+                        phDay ? phDay.value.toFixed(2) : 'N/A',
+                        phDay ? (phDay.isAlert ? 'ALERTE' : 'OK') : 'N/A'
+                    ].join(sep);
+                    csv += line + '\r\n';
+                }
+                return csv;
+            }
+
+            function generateSynthesisCsv() {
+                const sep = ';';
+                const header = csvHeaderInfo();
+                let csv = `${header}\r\nType${sep}Période${sep}Débit Moyen${sep}pH Moyen${sep}Alertes Débit${sep}Alertes pH\r\n`;
+
+                // Ordre identique à l'affichage (hebdo, mensuel, annuel), tous déjà triés asc
+                processedData.weekly.forEach(week => {
+                    csv += ['Semaine', week.period, week.debitAvg.toFixed(2), week.phAvg.toFixed(2), week.debitAlerts, week.phAlerts].join(sep) + '\r\n';
+                });
+                processedData.monthly.forEach(month => {
+                    csv += ['Mois', month.period, month.debitAvg.toFixed(2), month.phAvg.toFixed(2), month.debitAlerts, month.phAlerts].join(sep) + '\r\n';
+                });
+                processedData.yearly.forEach(year => {
+                    csv += ['Année', year.period, year.debitAvg.toFixed(2), year.phAvg.toFixed(2), year.debitAlerts, year.phAlerts].join(sep) + '\r\n';
+                });
+                return csv;
+            }
+
+            function downloadCsv(csvContent, fileName) {
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                saveAs(blob, fileName);
+            }
+        });
+    </script>
+</body>
+</html>

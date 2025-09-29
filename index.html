@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Analyseur Débit & pH — Modèle par défaut (MFC + compte écarts)</title>
+  <title>Analyseur Débit & pH</title>
 
   <!-- UI -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -30,18 +30,13 @@
 
   <div class="container mx-auto px-4 py-8 max-w-7xl">
     <header class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-800">📊 Analyseur Débit & pH — Modèle par défaut</h1>
-      <p class="text-gray-600">
-        Modèle <b>Modèle.xlsx</b> (ou <b>Modele.xlsx</b>) chargé automatiquement. <br/>
-        MFC : 0/vide = aucune couleur ; pH conforme (5.5 &lt; v &lt; 8.5) en <span class="text-green-600 font-semibold">vert</span>. <br/>
-        Q11..Q22 = <b>nombre</b> de jours avec débit ≥ 220 ; R11..R22 = <b>nombre</b> de jours avec pH hors [5.5 ; 8.5].
-      </p>
+      <h1 class="text-3xl font-bold text-gray-800">📊 Analyseur Débit & pH</h1>
     </header>
 
     <section class="bg-white rounded-lg shadow p-6 mb-6">
       <h2 class="text-xl font-semibold text-gray-800 mb-4">📁 Fichiers</h2>
 
-      <div class="grid md:grid-cols-3 gap-6">
+      <div class="grid md:grid-cols-2 gap-6">
         <div>
           <h3 class="text-sm font-medium text-gray-700 mb-2">💧 Fichier Débit</h3>
           <div id="uploadZoneDebit" class="upload-zone rounded-lg p-5 text-center cursor-pointer">
@@ -60,14 +55,6 @@
           </div>
           <input type="file" id="fileInputPh" accept=".xlsx,.xls,.csv" class="hidden">
           <div id="fileInfoPh" class="mt-2 hidden text-sm"><span id="fileNamePh" class="font-medium"></span> <span id="fileSizePh" class="text-gray-500"></span></div>
-        </div>
-
-        <div>
-          <h3 class="text-sm font-medium text-gray-700 mb-2">📄 Modèle (chargé par défaut)</h3>
-          <div class="rounded-lg p-5 bg-blue-50 border border-blue-200 text-blue-800 text-sm">
-            Recherche <b>Modèle.xlsx</b> (ou <b>Modele.xlsx</b>) dans ce dossier.
-            <div id="modelStatus" class="mt-1 text-xs text-blue-700"></div>
-          </div>
         </div>
       </div>
 
@@ -149,18 +136,18 @@
 
     // mapping exact 2025 (Jan..Sep) + Oct–Nov–Déc
     const MONTH_MAP_2025 = {
-      0: { jourCol:'B', debitCol:'C', phCol:'D', startRow:14,  endRow:44  }, // Jan (31)
-      1: { jourCol:'G', debitCol:'H', phCol:'I', startRow:14,  endRow:41  }, // Fév (28)
-      2: { jourCol:'L', debitCol:'M', phCol:'N', startRow:14,  endRow:44  }, // Mar (31)
-      3: { jourCol:'B', debitCol:'C', phCol:'D', startRow:50,  endRow:79  }, // Avr (30)
-      4: { jourCol:'G', debitCol:'H', phCol:'I', startRow:50,  endRow:80  }, // Mai (31)
-      5: { jourCol:'L', debitCol:'M', phCol:'N', startRow:50,  endRow:79  }, // Juin (30)
-      6: { jourCol:'B', debitCol:'C', phCol:'D', startRow:86,  endRow:116 }, // Juil (31)
-      7: { jourCol:'G', debitCol:'H', phCol:'I', startRow:86,  endRow:116 }, // Août (31)
-      8: { jourCol:'L', debitCol:'M', phCol:'N', startRow:86,  endRow:115 }, // Sept (30)
-      9: { jourCol:'B', debitCol:'C', phCol:'D', startRow:122, endRow:152 }, // Oct (31)
-      10:{ jourCol:'G', debitCol:'H', phCol:'I', startRow:122, endRow:151 }, // Nov (30)
-      11:{ jourCol:'L', debitCol:'M', phCol:'N', startRow:122, endRow:152 }  // Déc (31)
+      0: { jourCol:'B', debitCol:'C', phCol:'D', startRow:14,  endRow:44  }, // Jan
+      1: { jourCol:'G', debitCol:'H', phCol:'I', startRow:14,  endRow:41  }, // Fév
+      2: { jourCol:'L', debitCol:'M', phCol:'N', startRow:14,  endRow:44  }, // Mar
+      3: { jourCol:'B', debitCol:'C', phCol:'D', startRow:50,  endRow:79  }, // Avr
+      4: { jourCol:'G', debitCol:'H', phCol:'I', startRow:50,  endRow:80  }, // Mai
+      5: { jourCol:'L', debitCol:'M', phCol:'N', startRow:50,  endRow:79  }, // Juin
+      6: { jourCol:'B', debitCol:'C', phCol:'D', startRow:86,  endRow:116 }, // Juil
+      7: { jourCol:'G', debitCol:'H', phCol:'I', startRow:86,  endRow:116 }, // Août
+      8: { jourCol:'L', debitCol:'M', phCol:'N', startRow:86,  endRow:115 }, // Sept
+      9: { jourCol:'B', debitCol:'C', phCol:'D', startRow:122, endRow:152 }, // Oct
+      10:{ jourCol:'G', debitCol:'H', phCol:'I', startRow:122, endRow:151 }, // Nov
+      11:{ jourCol:'L', debitCol:'M', phCol:'N', startRow:122, endRow:152 }  // Déc
     };
 
     // plages par type (pour MFC & reset & calculs)
@@ -259,7 +246,7 @@
       setupFileUpload('Debit',(d)=>{debitData=d; setReady();});
       setupFileUpload('Ph',(d)=>{phData=d; setReady();});
 
-      // modèle par défaut
+      // modèle par défaut (chargé en arrière-plan, sans bloc d'UI)
       loadDefaultTemplate();
 
       // actions
@@ -317,10 +304,8 @@
 
     // ---------------------- MODÈLE ----------------------
     async function loadDefaultTemplate(){
-      const statusEl=document.getElementById('modelStatus');
       if (location.protocol==='file:'){
-        showBanner('warn','Page ouverte en <code>file://</code> → les navigateurs bloquent <code>fetch()</code> local. Servez ce dossier via <code>python -m http.server</code> ou Live Server pour charger <b>Modèle.xlsx</b>.');
-        statusEl.textContent='En attente d’un serveur local (http://).';
+        showBanner('warn','Page ouverte en <code>file://</code> → les navigateurs bloquent <code>fetch()</code> local. Servez ce dossier via un petit serveur (ex. <code>python -m http.server</code>).');
         return;
       }
       async function tryFetch(name){
@@ -328,9 +313,8 @@
         catch(_){ return null; }
       }
       let buf = await tryFetch('Modèle.xlsx'); if(!buf) buf = await tryFetch('Modele.xlsx');
-      if(!buf){ showBanner('err','Impossible de charger <b>Modèle.xlsx</b> (ou <b>Modele.xlsx</b>) dans ce dossier.'); statusEl.textContent='Modèle non chargé.'; return; }
+      if(!buf){ showBanner('err','Impossible de charger <b>Modèle.xlsx</b> (ou <b>Modele.xlsx</b>) dans ce dossier.'); return; }
       templateArrayBuffer = buf;
-      statusEl.textContent='Modèle chargé ✔';
       updateExportState();
     }
 
@@ -551,6 +535,9 @@
 
         // 5) Fallback couleurs directes si MFC KO — 0/vide ignorés
         if(!mfcOk){
+          const colorizeCell=(cell, isAlert)=>{
+            cell.fill = isAlert===null ? null : (isAlert ? FILL_RED : FILL_GREEN);
+          };
           sorted.forEach(o=>{
             const dt=new Date(o.t); if(dt.getUTCFullYear()!==2025) return;
             const m=dt.getUTCMonth(); const cfg=MONTH_MAP_2025[m]; if(!cfg) return;
@@ -560,12 +547,12 @@
 
             if(dCell.value!=null && dCell.value!=='' && Number(dCell.value)>0){
               const v=Number(dCell.value);
-              dCell.fill=null; colorize(dCell, isFinite(v)?isDebitAlert(v):null);
+              colorizeCell(dCell, isFinite(v)?(v>=DEBIT_THRESHOLD):null);
             } else dCell.fill=null;
 
             if(pCell.value!=null && pCell.value!=='' && Number(pCell.value)>0){
               const v=Number(pCell.value);
-              pCell.fill=null; colorize(pCell, isFinite(v)?isPhAlert(v):null);
+              colorizeCell(pCell, isFinite(v)?(v<=PH_MIN || v>=PH_MAX):null);
             } else pCell.fill=null;
           });
         }
@@ -573,10 +560,10 @@
         // 6) export
         const buf=await wb.xlsx.writeBuffer();
         saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'export_dep_ph_modele.xlsx');
-        showBanner('ok', mfcOk ? 'Export OK ✔ (MFC active ; comptage Q/R rempli + formule).' : 'Export OK ✔ (fallback couleur ; comptage Q/R rempli + formule).');
+        showBanner('ok', mfcOk ? 'Export OK ✔' : 'Export OK ✔ (fallback couleur).');
       }catch(err){
         console.error(err);
-        showBanner('err','❌ Export échoué. Vérifiez que la page est servie en <b>http://</b> et regardez la console pour le détail.');
+        showBanner('err','❌ Export échoué. Servez la page en <b>http://</b> et regardez la console pour le détail.');
       }
     }
   </script>

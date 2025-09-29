@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-  <title>Analyseur Débit & pH — Modèle intégré</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Analyseur Débit & pH — Export avec Modèle (couleurs respectées)</title>
 
   <!-- UI -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -12,210 +12,177 @@
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <style>
-    .upload-zone{border:2px dashed #d1d5db;transition:all .3s ease}
+    .upload-zone{border:2px dashed #d1d5db;transition:all .2s ease}
     .upload-zone:hover{border-color:#3b82f6;background:#f8fafc}
     .upload-zone.dragover{border-color:#2563eb;background:#eff6ff}
     .table-header{background:linear-gradient(135deg,#3b82f6,#1d4ed8)}
-    .alert-row{background:#fef2f2!important;border-left:4px solid #ef4444}
-    .nav-tab{transition:all .3s ease}
+    .nav-tab{transition:all .2s ease}
     .nav-tab.active{background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff}
+    .ok-pill{background:#dcfce7;color:#166534}
+    .ko-pill{background:#fee2e2;color:#991b1b}
+    .alert-row{background:#fef2f2!important}
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-  <div class="container mx-auto px-4 py-8">
-    <header class="text-center mb-8">
-      <h1 class="text-4xl font-bold text-gray-800 mb-2">📊 Analyseur Débit & pH</h1>
-      <p class="text-gray-600 text-lg">Feuille Excel <b>reconstituée en code</b> (aucun modèle externe)</p>
+  <div id="banner" class="hidden"></div>
+
+  <div class="container mx-auto px-4 py-8 max-w-7xl">
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold text-gray-800">📊 Analyseur Débit & pH — Export avec <span class="text-blue-700">Modèle fourni</span></h1>
+      <p class="text-gray-600">Couleurs appliquées en dur (rouge/vert) selon seuils — images du modèle ré-insérées automatiquement.</p>
     </header>
 
-    <main class="max-w-6xl mx-auto">
-      <section class="bg-white rounded-lg shadow-lg p-6 mb-8">
-        <h2 class="text-2xl font-semibold text-gray-800 mb-6">📁 Importation</h2>
+    <section class="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 class="text-xl font-semibold text-gray-800 mb-4">📁 Fichiers</h2>
 
-        <div class="grid md:grid-cols-2 gap-6">
-          <!-- Débit -->
-          <div>
-            <h3 class="text-lg font-medium text-gray-700 mb-3">💧 Fichier Débit (dernière valeur/jour)</h3>
-            <div id="uploadZoneDebit" class="upload-zone rounded-lg p-6 text-center cursor-pointer">
-              <p class="text-sm text-gray-600">Déposez ou cliquez pour choisir le fichier Débit</p>
-              <p class="text-xs text-gray-400 mt-1">Seuil d'alerte Débit : ≥ 220</p>
-            </div>
-            <input type="file" id="fileInputDebit" accept=".xlsx,.xls,.csv" class="hidden">
-            <div id="fileInfoDebit" class="mt-3 hidden">
-              <div class="flex items-center p-2 bg-blue-50 border border-blue-200 rounded-lg text-sm">
-                <span id="fileNameDebit" class="text-blue-800 font-medium"></span>
-                <span id="fileSizeDebit" class="text-blue-600 ml-2"></span>
-              </div>
-            </div>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div>
+          <h3 class="text-sm font-medium text-gray-700 mb-2">💧 Fichier Débit</h3>
+          <div id="uploadZoneDebit" class="upload-zone rounded-lg p-5 text-center cursor-pointer">
+            <p class="text-sm text-gray-600">Cliquez / déposez</p>
+            <p class="text-xs text-gray-400">Seuil alerte : ≥ 220</p>
           </div>
-
-          <!-- pH -->
-          <div>
-            <h3 class="text-lg font-medium text-gray-700 mb-3">🧪 Fichier pH (moyenne/jour)</h3>
-            <div id="uploadZonePh" class="upload-zone rounded-lg p-6 text-center cursor-pointer">
-              <p class="text-sm text-gray-600">Déposez ou cliquez pour choisir le fichier pH</p>
-              <p class="text-xs text-gray-400 mt-1">Seuils pH : ≤ 5.5 ou ≥ 8.5</p>
-            </div>
-            <input type="file" id="fileInputPh" accept=".xlsx,.xls,.csv" class="hidden">
-            <div id="fileInfoPh" class="mt-3 hidden">
-              <div class="flex items-center p-2 bg-green-50 border border-green-200 rounded-lg text-sm">
-                <span id="fileNamePh" class="text-green-800 font-medium"></span>
-                <span id="fileSizePh" class="text-green-600 ml-2"></span>
-              </div>
-            </div>
-          </div>
+          <input type="file" id="fileInputDebit" accept=".xlsx,.xls,.csv" class="hidden">
+          <div id="fileInfoDebit" class="mt-2 hidden text-sm"><span id="fileNameDebit" class="font-medium"></span> <span id="fileSizeDebit" class="text-gray-500"></span></div>
         </div>
 
-        <div class="mt-6 text-center">
-          <button id="analyzeBtn" class="bg-blue-600 hover:bg-blue-700 text-white py-3 px-8 rounded-lg font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed" disabled>
-            🔍 Analyser
-          </button>
-        </div>
-      </section>
-
-      <section id="resultsSection" class="hidden">
-        <div class="bg-white rounded-lg shadow-lg p-6">
-          <div class="flex flex-wrap gap-3 justify-between items-center mb-4">
-            <h2 class="text-2xl font-semibold text-gray-800">📤 Exports</h2>
-            <div class="flex flex-wrap gap-2">
-              <button id="exportEmbeddedBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium">
-                📥 Excel (mise en page intégrée)
-              </button>
-              <button id="exportFallbackBtn" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg font-medium">
-                📥 Excel (tableau simple)
-              </button>
-            </div>
+        <div>
+          <h3 class="text-sm font-medium text-gray-700 mb-2">🧪 Fichier pH</h3>
+          <div id="uploadZonePh" class="upload-zone rounded-lg p-5 text-center cursor-pointer">
+            <p class="text-sm text-gray-600">Cliquez / déposez</p>
+            <p class="text-xs text-gray-400">Seuils alerte : ≤ 5.5 ou ≥ 8.5</p>
           </div>
+          <input type="file" id="fileInputPh" accept=".xlsx,.xls,.csv" class="hidden">
+          <div id="fileInfoPh" class="mt-2 hidden text-sm"><span id="fileNamePh" class="font-medium"></span> <span id="fileSizePh" class="text-gray-500"></span></div>
+        </div>
 
+        <div>
+          <h3 class="text-sm font-medium text-gray-700 mb-2">📄 Modèle (automatique)</h3>
+          <div class="rounded-lg p-5 bg-blue-50 border border-blue-200 text-blue-800 text-sm">
+            Cherche <b>Modèle.xlsx</b> (ou <b>Modele.xlsx</b>) à côté de cette page.
+            <div id="modelStatus" class="mt-1 text-xs text-blue-700"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtres date -->
+      <div class="grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto] items-end mt-6">
+        <div>
+          <label for="startDate" class="block text-sm text-gray-600">Du</label>
+          <input id="startDate" type="date" class="w-full border rounded-lg px-3 py-2"/>
+        </div>
+        <div>
+          <label for="endDate" class="block text-sm text-gray-600">Au</label>
+          <input id="endDate" type="date" class="w-full border rounded-lg px-3 py-2"/>
+        </div>
+        <button id="applyFilterBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium disabled:bg-gray-300" disabled>Appliquer</button>
+        <button id="resetFilterBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium disabled:bg-gray-200" disabled>Réinitialiser</button>
+      </div>
+
+      <div class="mt-5 flex gap-3">
+        <button id="analyzeBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium disabled:bg-gray-300" disabled>🔍 Analyser</button>
+        <button id="exportTemplateBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg font-medium" disabled>📥 Excel (avec modèle & images)</button>
+      </div>
+    </section>
+
+    <section id="resultsSection" class="hidden">
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex border-b border-gray-200 mb-4">
+          <button class="nav-tab active px-5 py-2 font-medium rounded-tl-lg" data-tab="daily">📅 Données journalières</button>
+          <button class="nav-tab px-5 py-2 font-medium" data-tab="alerts">⚠️ Récap alertes</button>
+        </div>
+
+        <div id="dailyTab" class="tab-content">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-              <h3 class="text-lg font-semibold text-blue-600 mb-3">💧 Débit (dernière valeur/jour)</h3>
+              <h3 class="text-lg font-semibold text-blue-600 mb-2">💧 Débit (dernière valeur/jour)</h3>
               <div class="overflow-x-auto">
                 <table class="min-w-full bg-white border border-gray-200 rounded-lg">
                   <thead class="table-header text-white">
-                    <tr><th class="px-4 py-2 text-xs font-medium uppercase">Date</th><th class="px-4 py-2 text-xs font-medium uppercase">Valeur</th><th class="px-4 py-2 text-xs font-medium uppercase">État</th></tr>
+                    <tr><th class="px-3 py-2 text-xs uppercase">Date</th><th class="px-3 py-2 text-xs uppercase">Valeur</th><th class="px-3 py-2 text-xs uppercase">État</th></tr>
                   </thead>
                   <tbody id="debitTable" class="divide-y divide-gray-200"></tbody>
                 </table>
               </div>
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-green-600 mb-3">🧪 pH (moyenne/jour)</h3>
+              <h3 class="text-lg font-semibold text-green-600 mb-2">🧪 pH (moyenne/jour)</h3>
               <div class="overflow-x-auto">
                 <table class="min-w-full bg-white border border-gray-200 rounded-lg">
                   <thead class="table-header text-white">
-                    <tr><th class="px-4 py-2 text-xs font-medium uppercase">Date</th><th class="px-4 py-2 text-xs font-medium uppercase">Moyenne</th><th class="px-4 py-2 text-xs font-medium uppercase">État</th></tr>
+                    <tr><th class="px-3 py-2 text-xs uppercase">Date</th><th class="px-3 py-2 text-xs uppercase">Moyenne</th><th class="px-3 py-2 text-xs uppercase">État</th></tr>
                   </thead>
                   <tbody id="phTable" class="divide-y divide-gray-200"></tbody>
                 </table>
               </div>
             </div>
           </div>
-
         </div>
-      </section>
-    </main>
+
+        <div id="alertsTab" class="tab-content hidden">
+          <h3 class="text-lg font-semibold text-gray-800 mb-2">⚠️ Récapitulatif des alertes</h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+              <thead class="table-header text-white">
+                <tr><th class="px-3 py-2 text-xs uppercase">Date</th><th class="px-3 py-2 text-xs uppercase">Type</th><th class="px-3 py-2 text-xs uppercase">Valeur</th><th class="px-3 py-2 text-xs uppercase">Seuil</th></tr>
+              </thead>
+              <tbody id="alertsTable" class="divide-y divide-gray-200"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
   </div>
 
   <script>
-    // =================== ÉTAT & CONSTANTES ===================
-    let debitData = [], phData = [];
-    let processedData = { daily:{debit:[], ph:[]} };
-
+    // ---------------------- CONSTANTES ----------------------
     const DEBIT_THRESHOLD = 220;
     const PH_MIN = 5.5, PH_MAX = 8.5;
+    const NUM_FMT = '0.00';
 
-    // Couleurs (AARRGGBB)
     const FILL_RED   = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFFF0000' } }; // rouge
     const FILL_GREEN = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF00B050' } }; // vert Excel
-    const NUM_FMT    = '0.00';
 
-    // Mapping EXACT 2025 (tes coordonnées)
+    // mapping exact 2025
     const MONTH_MAP_2025 = {
-      0: { label:'JANVIER',   jourCol:'B', debitCol:'C', phCol:'D', startRow:14, endRow:44 }, // 31
-      1: { label:'FÉVRIER',   jourCol:'G', debitCol:'H', phCol:'I', startRow:14, endRow:41 }, // 28
-      2: { label:'MARS',      jourCol:'L', debitCol:'M', phCol:'N', startRow:14, endRow:44 }, // 31
-      3: { label:'AVRIL',     jourCol:'B', debitCol:'C', phCol:'D', startRow:50, endRow:79 }, // 30
-      4: { label:'MAI',       jourCol:'G', debitCol:'H', phCol:'I', startRow:50, endRow:80 }, // 31
-      5: { label:'JUIN',      jourCol:'L', debitCol:'M', phCol:'N', startRow:50, endRow:79 }, // 30
-      6: { label:'JUILLET',   jourCol:'B', debitCol:'C', phCol:'D', startRow:86, endRow:116}, // 31
-      7: { label:'AOÛT',      jourCol:'G', debitCol:'H', phCol:'I', startRow:86, endRow:116}, // 31
-      8: { label:'SEPTEMBRE', jourCol:'L', debitCol:'M', phCol:'N', startRow:86, endRow:115}  // 30
+      0: { label:'JAN', jourCol:'B', debitCol:'C', phCol:'D', startRow:14, endRow:44 }, // Jan (31)
+      1: { label:'FEV', jourCol:'G', debitCol:'H', phCol:'I', startRow:14, endRow:41 }, // Fév (28)
+      2: { label:'MAR', jourCol:'L', debitCol:'M', phCol:'N', startRow:14, endRow:44 }, // Mar (31)
+      3: { label:'AVR', jourCol:'B', debitCol:'C', phCol:'D', startRow:50, endRow:79 }, // Avr (30)
+      4: { label:'MAI', jourCol:'G', debitCol:'H', phCol:'I', startRow:50, endRow:80 }, // Mai (31)
+      5: { label:'JUN', jourCol:'L', debitCol:'M', phCol:'N', startRow:50, endRow:79 }, // Juin (30)
+      6: { label:'JUL', jourCol:'B', debitCol:'C', phCol:'D', startRow:86, endRow:116}, // Juil (31)
+      7: { label:'AOU', jourCol:'G', debitCol:'H', phCol:'I', startRow:86, endRow:116}, // Août (31)
+      8: { label:'SEP', jourCol:'L', debitCol:'M', phCol:'N', startRow:86, endRow:115}  // Sept (30)
     };
 
-    function isDebitAlert(v){ return typeof v === 'number' && isFinite(v) && v >= DEBIT_THRESHOLD; }
-    function isPhAlert(v){ return typeof v === 'number' && isFinite(v) && (v <= PH_MIN || v >= PH_MAX); }
-    function colorize(cell, alert){
-      if (alert === null) { cell.fill = null; return; }
-      cell.fill = alert ? FILL_RED : FILL_GREEN;
-    }
+    // ---------------------- ÉTAT ----------------------
+    let templateArrayBuffer = null;    // binaire du modèle
+    let templateImages = [];           // [{base64, tl:{row,col,colOff,rowOff}, br:{...}}]
+    let debitData = [], phData = [];
+    let processed = { daily:{debit:[], ph:[]}, filtered:{debit:[], ph:[]}, alerts:[], allUTC:[] };
+    let startMs=null, endMs=null;
 
-    // =================== INIT UI ===================
-    window.addEventListener('load', ()=>{
-      setupFileUpload('Debit', d=>{debitData=d; checkReady();});
-      setupFileUpload('Ph',    d=>{phData=d;   checkReady();});
+    // ---------------------- HELPERS ----------------------
+    const showBanner = (type,msg)=>{
+      const b=document.getElementById('banner');
+      const cls = {
+        ok:'bg-green-50 text-green-800 border border-green-200',
+        warn:'bg-amber-50 text-amber-800 border border-amber-200',
+        err:'bg-red-50 text-red-800 border border-red-200',
+        info:'bg-blue-50 text-blue-800 border border-blue-200'
+      }[type]||'bg-blue-50 text-blue-800 border border-blue-200';
+      b.className=cls+' max-w-7xl mx-auto px-4 py-3 rounded mb-4';
+      b.innerHTML=msg; b.classList.remove('hidden');
+    };
 
-      document.getElementById('analyzeBtn').addEventListener('click', analyze);
-      document.getElementById('exportEmbeddedBtn').addEventListener('click', exportExcelEmbeddedLayout);
-      document.getElementById('exportFallbackBtn').addEventListener('click', exportExcelFallback);
-    });
-
-    function checkReady(){
-      const ready = debitData.length && phData.length;
-      document.getElementById('analyzeBtn').disabled = !ready;
-    }
-
-    // =================== UPLOADS ===================
-    function setupFileUpload(type, callback){
-      const uploadZone=document.getElementById(`uploadZone${type}`);
-      const fileInput=document.getElementById(`fileInput${type}`);
-      const fileInfo=document.getElementById(`fileInfo${type}`);
-      const fileNameEl=document.getElementById(`fileName${type}`);
-      const fileSizeEl=document.getElementById(`fileSize${type}`);
-
-      uploadZone.addEventListener('click',()=>fileInput.click());
-      uploadZone.addEventListener('dragover',e=>{e.preventDefault();uploadZone.classList.add('dragover');});
-      uploadZone.addEventListener('dragleave',()=>uploadZone.classList.remove('dragover'));
-      uploadZone.addEventListener('drop',e=>{
-        e.preventDefault(); uploadZone.classList.remove('dragover');
-        if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-      });
-      fileInput.addEventListener('change',e=>{
-        if(e.target.files.length) handleFile(e.target.files[0]);
-      });
-
-      function handleFile(file){
-        fileNameEl.textContent=file.name;
-        fileSizeEl.textContent=`(${(file.size/1024/1024).toFixed(2)} MB)`;
-        fileInfo.classList.remove('hidden');
-        const reader=new FileReader();
-        reader.onload=(ev)=>{
-          try{
-            let data;
-            if (file.name.toLowerCase().endsWith('.csv')){
-              const csv=ev.target.result;
-              const lines=csv.split(/\r?\n/).filter(l=>l.trim().length>0);
-              const sep=detectSep(lines[0]);
-              data=lines.map(line=>line.split(sep).map(c=>c.trim()));
-            } else {
-              const wb=XLSX.read(ev.target.result,{type:'array'});
-              const ws=wb.Sheets[wb.SheetNames[0]];
-              data=XLSX.utils.sheet_to_json(ws,{header:1});
-            }
-            const clean=(data||[]).filter(r=>r&&r.length>1&&r[0]&&r[1]);
-            callback(clean);
-          }catch(err){ console.error(err); alert(`Erreur lors du traitement du fichier ${type}`); }
-        };
-        if (file.name.toLowerCase().endsWith('.csv')) reader.readAsText(file); else reader.readAsArrayBuffer(file);
-      }
-    }
     function detectSep(headerLine){
       const sc=(headerLine.match(/;/g)||[]).length, cc=(headerLine.match(/,/g)||[]).length; return sc>=cc?';':',';
     }
-
-    // =================== DATES & PARSING ===================
     function parseInputDateUTC(s){ const m=String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!m) return null; return Date.UTC(+m[1],+m[2]-1,+m[3]);}
     function parseDMYtoUTC(s){ const m=String(s||'').match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{2,4})$/); if(!m) return null; let y=+m[3]; if(y<100) y+=2000; return Date.UTC(y,+m[2]-1,+m[1]);}
     function parseExcelSerialUTC(s){ const txt=String(s||'').trim(); if(!/^\d{1,5}(\.\d+)?$/.test(txt)) return null; const serial=Math.floor(+txt); const epoch=Date.UTC(1899,11,30); return epoch+serial*86400000;}
@@ -227,12 +194,171 @@
       return new Date(Number(y),Number(m)-1,Number(d),H||0,M||0,S||0);
     }
     function formatDate(d){ const dd=String(d.getDate()).padStart(2,'0'); const mm=String(d.getMonth()+1).padStart(2,'0'); return `${dd}/${mm}/${d.getFullYear()}`; }
+    function toInputUTC(ms){ const d=new Date(ms); const y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), day=String(d.getUTCDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+    function isDebitAlert(v){ return typeof v === 'number' && isFinite(v) && v >= DEBIT_THRESHOLD; }
+    function isPhAlert(v){ return typeof v === 'number' && isFinite(v) && (v <= PH_MIN || v >= PH_MAX); }
+    function colorize(cell, alert){ cell.fill = (alert===null) ? null : (alert ? FILL_RED : FILL_GREEN); }
 
+    // ---------------------- UI INIT ----------------------
+    window.addEventListener('load',()=>{
+      document.querySelectorAll('.nav-tab').forEach(tab=>{
+        tab.addEventListener('click',()=>{
+          const target=tab.dataset.tab;
+          document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+          tab.classList.add('active');
+          document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));
+          document.getElementById(target+'Tab').classList.remove('hidden');
+        });
+      });
+
+      // uploads
+      setupFileUpload('Debit',(d)=>{debitData=d; setReady();});
+      setupFileUpload('Ph',(d)=>{phData=d; setReady();});
+
+      // modèle
+      loadTemplate();
+
+      // actions
+      document.getElementById('analyzeBtn').addEventListener('click', analyze);
+      document.getElementById('exportTemplateBtn').addEventListener('click', exportWithTemplate);
+      document.getElementById('applyFilterBtn').addEventListener('click', applyFilter);
+      document.getElementById('resetFilterBtn').addEventListener('click', resetFilter);
+      document.getElementById('startDate').addEventListener('change', applyFilter);
+      document.getElementById('endDate').addEventListener('change', applyFilter);
+    });
+
+    function setReady(){
+      const ready = debitData.length && phData.length;
+      document.getElementById('analyzeBtn').disabled = !ready;
+      document.getElementById('applyFilterBtn').disabled = !ready;
+      document.getElementById('resetFilterBtn').disabled = !ready;
+    }
+
+    function setupFileUpload(type, callback){
+      const z=document.getElementById(`uploadZone${type}`);
+      const i=document.getElementById(`fileInput${type}`);
+      const info=document.getElementById(`fileInfo${type}`);
+      const fn=document.getElementById(`fileName${type}`);
+      const fs=document.getElementById(`fileSize${type}`);
+
+      z.addEventListener('click',()=>i.click());
+      z.addEventListener('dragover',e=>{e.preventDefault();z.classList.add('dragover');});
+      z.addEventListener('dragleave',()=>z.classList.remove('dragover'));
+      z.addEventListener('drop',e=>{e.preventDefault();z.classList.remove('dragover'); if(e.dataTransfer.files.length) handle(e.dataTransfer.files[0]);});
+      i.addEventListener('change',e=>{ if(e.target.files.length) handle(e.target.files[0]); });
+
+      function handle(file){
+        fn.textContent=file.name; fs.textContent=`(${(file.size/1024/1024).toFixed(2)} MB)`; info.classList.remove('hidden');
+        const reader=new FileReader();
+        reader.onload=(ev)=>{
+          try{
+            let data;
+            if (file.name.toLowerCase().endsWith('.csv')){
+              const text=ev.target.result;
+              const lines=text.split(/\r?\n/).filter(l=>l.trim());
+              const sep=detectSep(lines[0]);
+              data = lines.map(line=>line.split(sep).map(c=>c.trim()));
+            } else {
+              const wb=XLSX.read(ev.target.result,{type:'array'});
+              const ws=wb.Sheets[wb.SheetNames[0]];
+              data=XLSX.utils.sheet_to_json(ws,{header:1});
+            }
+            const clean=(data||[]).filter(r=>r&&r.length>1&&r[0]!==''&&r[1]!=='' );
+            callback(clean);
+          }catch(err){ console.error(err); alert(`Erreur lecture fichier ${type}`); }
+        };
+        if (file.name.toLowerCase().endsWith('.csv')) reader.readAsText(file); else reader.readAsArrayBuffer(file);
+      }
+    }
+
+    // ---------------------- MODÈLE : fetch + extraction images/ancres ----------------------
+    async function fetchBuffer(path){
+      try{
+        const r=await fetch(path,{cache:'no-store'}); if(!r.ok) return null; return await r.arrayBuffer();
+      }catch(_){ return null; }
+    }
+    async function loadTemplate(){
+      if (location.protocol==='file:'){
+        showBanner('warn','Page ouverte en <code>file://</code> → les navigateurs bloquent <code>fetch()</code> local. Servez ce dossier via <code>python -m http.server</code> ou une extension Live Server pour charger <b>Modèle.xlsx</b>.');
+        return;
+      }
+      let buf = await fetchBuffer('Modèle.xlsx');
+      if(!buf) buf = await fetchBuffer('Modele.xlsx');
+      const statusEl = document.getElementById('modelStatus');
+
+      if(!buf){ showBanner('err','Impossible de charger le modèle <b>Modèle.xlsx</b> (ou <b>Modele.xlsx</b>) dans le même dossier.'); statusEl.textContent='Modèle non chargé.'; return; }
+
+      templateArrayBuffer = buf;
+      statusEl.textContent='Modèle chargé ✔ (images & ancres récupérées)';
+
+      // Extraire images & ancres via JSZip
+      try{
+        const zip = await JSZip.loadAsync(buf);
+        // drawings
+        const drels = ['xl/drawings/drawing1.xml','xl/drawings/drawing2.xml'].filter(p=>zip.file(p));
+        const images = [];
+        for(const d of drels){
+          const xmlTxt = await zip.file(d).async('string');
+          const parser = new DOMParser(); const doc = parser.parseFromString(xmlTxt,'application/xml');
+          const ns = 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing';
+          const anchors = Array.from(doc.getElementsByTagNameNS(ns,'twoCellAnchor'));
+          for(const a of anchors){
+            const from = a.getElementsByTagNameNS(ns,'from')[0];
+            const to   = a.getElementsByTagNameNS(ns,'to')[0];
+            if(!from||!to) continue;
+            const g = (node,tag)=>Number(node.getElementsByTagNameNS(ns,tag)[0].textContent||0);
+            const tl = { col:g(from,'col'), colOff:g(from,'colOff'), row:g(from,'row'), rowOff:g(from,'rowOff') };
+            const br = { col:g(to,'col'),   colOff:g(to,'colOff'),   row:g(to,'row'),   rowOff:g(to,'rowOff')   };
+            // relation -> image file
+            // drawing rels: assume image1.png / image2.png exist
+            // On garde simplement toutes les images présentes dans xl/media/
+            images.push({ tl, br });
+          }
+        }
+        // lire tous les png (ordre stable : image1.png, image2.png, ...)
+        const media = (zip.folder('xl/media')||{file:()=>[]}).file(/image\d+\.png/);
+        const b64s=[];
+        for(const f of media){
+          const base64 = await f.async('base64');
+          b64s.push(base64);
+        }
+        // associer par ordre (1er anchor -> 1ère image, etc.)
+        templateImages = (images.length && b64s.length) ? images.slice(0,b64s.length).map((a,i)=>({ ...a, base64:b64s[i] })) : [];
+      }catch(e){
+        console.warn('Extraction images/ancres échouée (optionnelle):', e);
+        templateImages = [];
+      }
+
+      // Activer export si données prêtes
+      updateExportState();
+      showBanner('ok','Modèle chargé. Lors de l’export : <b>valeurs injectées</b>, <b>couleurs appliquées</b>, <b>images ré-insérées</b>.');
+    }
+
+    function updateExportState(){
+      const enabled = !!templateArrayBuffer && (processed.filtered.debit.length || processed.filtered.ph.length);
+      const btn = document.getElementById('exportTemplateBtn');
+      btn.disabled = !enabled;
+      btn.title = enabled ? '' : 'Importez/Analysez vos données puis chargez le modèle';
+    }
+
+    // ---------------------- ANALYSE & FILTRE ----------------------
     function analyze(){
-      processedData.daily.debit = processDebitData(debitData);
-      processedData.daily.ph    = processPhData(phData);
-      renderTables();
+      processed.daily.debit = processDebitData(debitData);
+      processed.daily.ph    = processPhData(phData);
+
+      // bornes dates
+      const allUTC = Array.from(new Set([...processed.daily.debit.map(d=>d.date), ...processed.daily.ph.map(p=>p.date)]))
+        .map(d=>dmyStrToUTCms(d)).filter(Boolean).sort((a,b)=>a-b);
+      processed.allUTC = allUTC.slice();
+      if (allUTC.length){
+        startMs = allUTC[0]; endMs = allUTC[allUTC.length-1];
+        document.getElementById('startDate').value = toInputUTC(startMs);
+        document.getElementById('endDate').value   = toInputUTC(endMs);
+      } else { startMs=endMs=null; }
+
+      applyFilter();
       document.getElementById('resultsSection').classList.remove('hidden');
+      updateExportState();
     }
 
     function processDebitData(data){
@@ -248,10 +374,9 @@
       });
       return Object.keys(perDay).sort((a,b)=>dmyStrToUTCms(a)-dmyStrToUTCms(b)).map(k=>{
         const arr=perDay[k].sort((a,b)=>a.time-b.time); const last=arr[arr.length-1].value;
-        return {date:k, value:last, isAlert:isDebitAlert(last), count:arr.length};
+        return {date:k, value:last, isAlert:isDebitAlert(last)};
       });
     }
-
     function processPhData(data){
       const perDay={};
       data.forEach((row,i)=>{ if(i===0) return;
@@ -266,128 +391,156 @@
         const arr=(perDay[k]||[]).filter(v=>isFinite(v)&&v!==0);
         if(!arr.length) return null;
         const avg=arr.reduce((a,b)=>a+b,0)/arr.length;
-        return {date:k, value:avg, isAlert:isPhAlert(avg), count:arr.length};
+        return {date:k, value:avg, isAlert:isPhAlert(avg)};
       }).filter(Boolean);
+    }
+
+    function applyFilter(){
+      const s=parseInputDateUTC(document.getElementById('startDate').value);
+      const e=parseInputDateUTC(document.getElementById('endDate').value);
+      startMs = s!=null?s:null; endMs = e!=null?e:null;
+
+      const inRange=(dmy)=>{
+        const t=dmyStrToUTCms(dmy); if(t==null) return false;
+        const endInclusive=(endMs!=null)?(endMs+86400000-1):null;
+        if(startMs!=null && t<startMs) return false;
+        if(endInclusive!=null && t>endInclusive) return false;
+        return true;
+      };
+      processed.filtered.debit = processed.daily.debit.filter(d=>inRange(d.date));
+      processed.filtered.ph    = processed.daily.ph.filter(p=>inRange(p.date));
+
+      // alertes
+      const alerts=[];
+      processed.filtered.debit.forEach(d=>{ if(isDebitAlert(d.value)) alerts.push({date:d.date,type:'Débit',value:d.value,th:`≥ ${DEBIT_THRESHOLD}`}); });
+      processed.filtered.ph.forEach(p=>{ if(isPhAlert(p.value)) alerts.push({date:p.date,type:'pH',value:p.value,th:`≤ ${PH_MIN} ou ≥ ${PH_MAX}`}); });
+      processed.alerts = alerts.sort((a,b)=>dmyStrToUTCms(a.date)-dmyStrToUTCms(b.date));
+
+      renderTables();
+      const ar=document.getElementById('activeRange');
+      if(startMs!=null&&endMs!=null){ ar.textContent=`Période filtrée : ${toInputUTC(startMs)} → ${toInputUTC(endMs)}`; ar.classList.remove('hidden'); }
+      else ar.classList.add('hidden');
+
+      updateExportState();
+    }
+    function resetFilter(){
+      const all=processed.allUTC;
+      if(all.length){
+        startMs=all[0]; endMs=all[all.length-1];
+        document.getElementById('startDate').value=toInputUTC(startMs);
+        document.getElementById('endDate').value=toInputUTC(endMs);
+      } else { startMs=endMs=null; }
+      applyFilter();
     }
 
     function renderTables(){
       const fmt=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
-
-      const dRows=processedData.daily.debit.map(d=>`
-        <tr class="${d.isAlert?'alert-row':''}">
-          <td class="px-4 py-2 text-sm">${d.date}</td>
-          <td class="px-4 py-2 text-sm font-medium">${fmt(d.value)}</td>
-          <td class="px-4 py-2 text-sm">${d.isAlert?'<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">⚠️ Alerte</span>':'<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">✅ OK</span>'}</td>
+      const dRows=processed.filtered.debit
+        .sort((a,b)=>dmyStrToUTCms(a.date)-dmyStrToUTCms(b.date))
+        .map(d=>`<tr class="${d.isAlert?'alert-row':''}">
+          <td class="px-3 py-2 text-sm">${d.date}</td>
+          <td class="px-3 py-2 text-sm font-medium">${fmt(d.value)}</td>
+          <td class="px-3 py-2 text-sm"><span class="px-2 py-1 rounded text-xs ${d.isAlert?'ko-pill':'ok-pill'}">${d.isAlert?'⚠️ Alerte':'✅ OK'}</span></td>
         </tr>`).join('');
-      document.getElementById('debitTable').innerHTML=dRows || '<tr><td class="px-4 py-2 text-sm" colspan="3">Aucune donnée.</td></tr>';
+      document.getElementById('debitTable').innerHTML=dRows || '<tr><td class="px-3 py-2 text-sm" colspan="3">Aucune donnée.</td></tr>';
 
-      const pRows=processedData.daily.ph.map(p=>`
-        <tr class="${p.isAlert?'alert-row':''}">
-          <td class="px-4 py-2 text-sm">${p.date}</td>
-          <td class="px-4 py-2 text-sm font-medium">${fmt(p.value)}</td>
-          <td class="px-4 py-2 text-sm">${p.isAlert?'<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">⚠️ Alerte</span>':'<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">✅ OK</span>'}</td>
+      const pRows=processed.filtered.ph
+        .sort((a,b)=>dmyStrToUTCms(a.date)-dmyStrToUTCms(b.date))
+        .map(p=>`<tr class="${p.isAlert?'alert-row':''}">
+          <td class="px-3 py-2 text-sm">${p.date}</td>
+          <td class="px-3 py-2 text-sm font-medium">${fmt(p.value)}</td>
+          <td class="px-3 py-2 text-sm"><span class="px-2 py-1 rounded text-xs ${p.isAlert?'ko-pill':'ok-pill'}">${p.isAlert?'⚠️ Alerte':'✅ OK'}</span></td>
         </tr>`).join('');
-      document.getElementById('phTable').innerHTML=pRows || '<tr><td class="px-4 py-2 text-sm" colspan="3">Aucune donnée.</td></tr>';
+      document.getElementById('phTable').innerHTML=pRows || '<tr><td class="px-3 py-2 text-sm" colspan="3">Aucune donnée.</td></tr>';
+
+      const aRows=processed.alerts.map(a=>`<tr>
+        <td class="px-3 py-2 text-sm">${a.date}</td>
+        <td class="px-3 py-2 text-sm font-medium">${a.type}</td>
+        <td class="px-3 py-2 text-sm">${fmt(a.value)}</td>
+        <td class="px-3 py-2 text-sm">${a.th}</td>
+      </tr>`).join('');
+      document.getElementById('alertsTable').innerHTML=aRows || '<tr><td class="px-3 py-2 text-sm" colspan="4">Aucune alerte.</td></tr>';
     }
 
-    // =================== EXPORTS ===================
-    async function exportExcelEmbeddedLayout(){
-      if(!processedData.daily.debit.length && !processedData.daily.ph.length){
-        alert('Analyse d’abord les données.'); return;
-      }
+    // ---------------------- EXPORT AVEC MODÈLE ----------------------
+    async function exportWithTemplate(){
+      if(!templateArrayBuffer){ alert('Modèle non chargé.'); return; }
+      if(!processed.filtered.debit.length && !processed.filtered.ph.length){ alert('Aucune donnée filtrée à exporter.'); return; }
 
+      // charge le modèle dans ExcelJS
       const wb = new ExcelJS.Workbook();
-      const ws = wb.addWorksheet('suivi des débits et du pH');
+      await wb.xlsx.load(templateArrayBuffer);
+      // choisis la feuille cible
+      let ws = wb.getWorksheet('suivi des débits et du pH') || wb.worksheets[0];
 
-      // (Optionnel) un peu de mise en page globale
-      ws.properties.defaultRowHeight = 16;
-      // définit des largeurs pour B..N pour y voir clair
-      const widths = { B:12, C:12, D:12, G:12, H:12, I:12, L:12, M:12, N:12 };
-      Object.entries(widths).forEach(([col,w])=>{ ws.getColumn(col).width = w; });
+      // 1) ré-insérer les images du modèle aux mêmes ancres
+      try{
+        templateImages.forEach(img=>{
+          const id = wb.addImage({ base64:`data:image/png;base64,${img.base64}`, extension:'png' });
+          ws.addImage(id, { tl: img.tl, br: img.br });
+        });
+      }catch(e){ console.warn('Réinsertion images échouée (optionnelle):', e); }
 
-      // Écrire les dates/valeurs aux adresses EXACTES définies
-      const mapD=new Map(processedData.daily.debit.map(d=>[d.date,d]));
-      const mapP=new Map(processedData.daily.ph.map(d=>[d.date,d]));
-      const allDates = new Set([...mapD.keys(), ...mapP.keys()]);
-      const sorted = Array.from(allDates).map(d=>({dStr:d, t:dmyStrToUTCms(d)})).filter(o=>o.t!=null).sort((a,b)=>a.t-b.t);
+      // 2) reset des cellules valeurs (débit/pH) pour éviter couleurs résiduelles
+      const zones = [
+        {cols:['C','D'], from:14, to:44},   // Jan
+        {cols:['H','I'], from:14, to:41},   // Fév
+        {cols:['M','N'], from:14, to:44},   // Mar
+        {cols:['C','D'], from:50, to:79},   // Avr
+        {cols:['H','I'], from:50, to:80},   // Mai
+        {cols:['M','N'], from:50, to:79},   // Juin
+        {cols:['C','D'], from:86, to:116},  // Juil
+        {cols:['H','I'], from:86, to:116},  // Août
+        {cols:['M','N'], from:86, to:115}   // Sept
+      ];
+      zones.forEach(z=>{
+        for(let r=z.from;r<=z.to;r++){
+          z.cols.forEach(c=>{
+            const cell=ws.getCell(`${c}${r}`);
+            cell.value = null;
+            cell.fill  = null;
+            cell.numFmt= undefined;
+          });
+        }
+      });
+
+      // 3) écrire valeurs + couleurs aux adresses EXACTES
+      const mapD=new Map(processed.filtered.debit.map(d=>[d.date,d]));
+      const mapP=new Map(processed.filtered.ph.map(p=>[p.date,p]));
+      const allDates=new Set([...mapD.keys(),...mapP.keys()]);
+      const sorted=Array.from(allDates).map(d=>({dStr:d, t:dmyStrToUTCms(d)})).filter(x=>x.t!=null).sort((a,b)=>a.t-b.t);
 
       sorted.forEach(o=>{
-        const dt = new Date(o.t);
-        if (dt.getUTCFullYear() !== 2025) return; // on remplit uniquement 2025
-        const m = dt.getUTCMonth(); // 0..11
-        const cfg = MONTH_MAP_2025[m];
-        if (!cfg) return; // Oct–Déc non mappés ici
-        const day = dt.getUTCDate();
-        const row = cfg.startRow + (day - 1);
-        if (row < cfg.startRow || row > cfg.endRow) return; // hors plage du mois
+        const dt=new Date(o.t); if(dt.getUTCFullYear()!==2025) return;
+        const m=dt.getUTCMonth(); const cfg=MONTH_MAP_2025[m]; if(!cfg) return;
+        const day=dt.getUTCDate(); const row=cfg.startRow + (day-1);
+        if(row<cfg.startRow || row>cfg.endRow) return;
 
-        // Jour (écrit à 23:59:59 UTC pour éviter l'heure locale dans Excel)
-        const jourCell = ws.getCell(`${cfg.jourCol}${row}`);
-        jourCell.value = new Date(Date.UTC(2025, m, day, 23,59,59));
-        jourCell.numFmt = 'dd/mm/yyyy';
+        // Jour : si tu veux écraser les dates existantes, décommente la ligne suivante
+        // ws.getCell(`${cfg.jourCol}${row}`).value = new Date(Date.UTC(2025,m,day,23,59,59));
 
-        // Débit
-        const dRec = mapD.get(o.dStr);
-        const debCell = ws.getCell(`${cfg.debitCol}${row}`);
-        if (dRec){
-          const v = Number(dRec.value);
-          debCell.value = isFinite(v) ? v : null;
+        const dRec=mapD.get(o.dStr), pRec=mapP.get(o.dStr);
+        const debCell=ws.getCell(`${cfg.debitCol}${row}`);
+        const phCell =ws.getCell(`${cfg.phCol}${row}`);
+
+        if(dRec){
+          const v=Number(dRec.value);
+          debCell.value = isFinite(v)?v:null;
           debCell.numFmt = NUM_FMT;
-          colorize(debCell, isFinite(v) ? isDebitAlert(v) : null);
-        } else {
-          debCell.value = null; debCell.fill = null;
-        }
+          colorize(debCell, isFinite(v)?isDebitAlert(v):null);
+        } else { debCell.value=null; debCell.fill=null; }
 
-        // pH
-        const pRec = mapP.get(o.dStr);
-        const phCell = ws.getCell(`${cfg.phCol}${row}`);
-        if (pRec){
-          const v = Number(pRec.value);
-          phCell.value = isFinite(v) ? v : null;
+        if(pRec){
+          const v=Number(pRec.value);
+          phCell.value = isFinite(v)?v:null;
           phCell.numFmt = NUM_FMT;
-          colorize(phCell, isFinite(v) ? isPhAlert(v) : null);
-        } else {
-          phCell.value = null; phCell.fill = null;
-        }
+          colorize(phCell, isFinite(v)?isPhAlert(v):null);
+        } else { phCell.value=null; phCell.fill=null; }
       });
 
+      // 4) export
       const buf=await wb.xlsx.writeBuffer();
-      saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'export_modele_integre.xlsx');
-    }
-
-    async function exportExcelFallback(){
-      if(!processedData.daily.debit.length && !processedData.daily.ph.length){
-        alert('Analyse d’abord les données.'); return;
-      }
-      const wb=new ExcelJS.Workbook();
-      const ws=wb.addWorksheet('suivi des débits et du pH (simple)');
-
-      const headerFill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1D4ED8'}};
-      const headerFont={color:{argb:'FFFFFFFF'},bold:true};
-      const borderThin={style:'thin',color:{argb:'FFCCCCCC'}};
-
-      ws.addRow(['Date','Débit (dernière valeur)','pH (moyenne)','Statut Débit','Statut pH']);
-      ws.getRow(1).eachCell(c=>{ c.fill=headerFill; c.font=headerFont; c.border={top:borderThin,left:borderThin,bottom:borderThin,right:borderThin}; c.alignment={vertical:'middle',horizontal:'center'}; });
-
-      const mapD=new Map(processedData.daily.debit.map(d=>[d.date,d]));
-      const mapP=new Map(processedData.daily.ph.map(d=>[d.date,d]));
-      const all=new Set([...mapD.keys(),...mapP.keys()]);
-      const sorted=Array.from(all).sort((a,b)=>dmyStrToUTCms(a)-dmyStrToUTCms(b));
-
-      sorted.forEach(ds=>{
-        const dRec=mapD.get(ds), pRec=mapP.get(ds);
-        const dv = dRec?Number(dRec.value):null;
-        const pv = pRec?Number(pRec.value):null;
-        const r=ws.addRow([ds, dv, pv, dRec?(isDebitAlert(dv)?'ALERTE':'OK'):'', pRec?(isPhAlert(pv)?'ALERTE':'OK'):'' ]);
-        if(dRec){ colorize(r.getCell(2), isFinite(dv)?isDebitAlert(dv):null); r.getCell(2).numFmt=NUM_FMT; }
-        if(pRec){ colorize(r.getCell(3), isFinite(pv)?isPhAlert(pv):null); r.getCell(3).numFmt=NUM_FMT; }
-        r.eachCell(c=>{ c.border={top:borderThin,left:borderThin,bottom:borderThin,right:borderThin}; });
-      });
-
-      ws.columns=[{width:14},{width:22},{width:16},{width:14},{width:12}];
-
-      const buf=await wb.xlsx.writeBuffer();
-      saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'export_simple.xlsx');
+      saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'export_dep_ph_modele.xlsx');
     }
   </script>
 </body>

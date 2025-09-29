@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Analyseur Débit & pH — Modèle par défaut + MFC fiable</title>
+  <title>Analyseur Débit & pH — Modèle par défaut (MFC + fallback)</title>
 
   <!-- UI -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -30,8 +30,8 @@
 
   <div class="container mx-auto px-4 py-8 max-w-7xl">
     <header class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-800">📊 Analyseur Débit & pH — Modèle <span class="text-blue-700">par défaut</span> + <span class="text-green-700">MFC robuste</span></h1>
-      <p class="text-gray-600">Le modèle <b>Modèle.xlsx</b> est chargé automatiquement (ou <b>Modele.xlsx</b>). Les couleurs sont assurées par <b>mise en forme conditionnelle</b> dans l’export.</p>
+      <h1 class="text-3xl font-bold text-gray-800">📊 Analyseur Débit & pH — Modèle par défaut</h1>
+      <p class="text-gray-600">Le modèle <b>Modèle.xlsx</b> est chargé automatiquement (ou <b>Modele.xlsx</b>). Couleurs via <b>MFC si dispo</b>, sinon <b>fallback</b> (rouge/vert en dur).</p>
     </header>
 
     <section class="bg-white rounded-lg shadow p-6 mb-6">
@@ -83,7 +83,7 @@
 
       <div class="mt-5 flex gap-3">
         <button id="analyzeBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium disabled:bg-gray-300" disabled>🔍 Analyser</button>
-        <button id="exportTemplateBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg font-medium" disabled>📥 Excel (via Modèle + MFC)</button>
+        <button id="exportTemplateBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg font-medium" disabled>📥 Excel (via Modèle)</button>
       </div>
     </section>
 
@@ -145,16 +145,20 @@
 
     // mapping exact 2025
     const MONTH_MAP_2025 = {
-      0: { jourCol:'B', debitCol:'C', phCol:'D', startRow:14, endRow:44 }, // Jan (31)
-      1: { jourCol:'G', debitCol:'H', phCol:'I', startRow:14, endRow:41 }, // Fév (28)
-      2: { jourCol:'L', debitCol:'M', phCol:'N', startRow:14, endRow:44 }, // Mar (31)
-      3: { jourCol:'B', debitCol:'C', phCol:'D', startRow:50, endRow:79 }, // Avr (30)
-      4: { jourCol:'G', debitCol:'H', phCol:'I', startRow:50, endRow:80 }, // Mai (31)
-      5: { jourCol:'L', debitCol:'M', phCol:'N', startRow:50, endRow:79 }, // Juin (30)
-      6: { jourCol:'B', debitCol:'C', phCol:'D', startRow:86, endRow:116}, // Juil (31)
-      7: { jourCol:'G', debitCol:'H', phCol:'I', startRow:86, endRow:116}, // Août (31)
-      8: { jourCol:'L', debitCol:'M', phCol:'N', startRow:86, endRow:115}  // Sept (30)
+      0: { jourCol:'B', debitCol:'C', phCol:'D', startRow:14, endRow:44 }, // Jan
+      1: { jourCol:'G', debitCol:'H', phCol:'I', startRow:14, endRow:41 }, // Fév
+      2: { jourCol:'L', debitCol:'M', phCol:'N', startRow:14, endRow:44 }, // Mar
+      3: { jourCol:'B', debitCol:'C', phCol:'D', startRow:50, endRow:79 }, // Avr
+      4: { jourCol:'G', debitCol:'H', phCol:'I', startRow:50, endRow:80 }, // Mai
+      5: { jourCol:'L', debitCol:'M', phCol:'N', startRow:50, endRow:79 }, // Juin
+      6: { jourCol:'B', debitCol:'C', phCol:'D', startRow:86, endRow:116}, // Juil
+      7: { jourCol:'G', debitCol:'H', phCol:'I', startRow:86, endRow:116}, // Août
+      8: { jourCol:'L', debitCol:'M', phCol:'N', startRow:86, endRow:115}  // Sept
     };
+
+    // Couleurs directes (fallback)
+    const FILL_RED   = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFFF0000' } };
+    const FILL_GREEN = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF00B050' } };
 
     // ---------------------- ÉTAT ----------------------
     let templateArrayBuffer = null;
@@ -193,20 +197,10 @@
 
     function isDebitAlert(v){ return typeof v === 'number' && isFinite(v) && v >= DEBIT_THRESHOLD; }
     function isPhAlert(v){ return typeof v === 'number' && isFinite(v) && (v <= PH_MIN || v >= PH_MAX); }
+    function colorize(cell, alert){ cell.fill = (alert===null) ? null : (alert ? FILL_RED : FILL_GREEN); }
 
     // ---------------------- INIT ----------------------
     window.addEventListener('load',()=>{
-      // tabs
-      document.querySelectorAll('.nav-tab').forEach(tab=>{
-        tab.addEventListener('click',()=>{
-          const target=tab.dataset.tab;
-          document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
-          tab.classList.add('active');
-          document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));
-          document.getElementById(target+'Tab').classList.remove('hidden');
-        });
-      });
-
       // uploads
       setupFileUpload('Debit',(d)=>{debitData=d; setReady();});
       setupFileUpload('Ph',(d)=>{phData=d; setReady();});
@@ -228,8 +222,6 @@
       document.getElementById('analyzeBtn').disabled = !ready;
       document.getElementById('applyFilterBtn').disabled = !ready;
       document.getElementById('resetFilterBtn').disabled = !ready;
-      // export activé une fois modèle chargé + données filtrées
-      updateExportState();
     }
 
     function setupFileUpload(type, callback){
@@ -282,7 +274,7 @@
         catch(_){ return null; }
       }
       let buf = await tryFetch('Modèle.xlsx'); if(!buf) buf = await tryFetch('Modele.xlsx');
-      if(!buf){ showBanner('err','Impossible de charger <b>Modèle.xlsx</b> (ou <b>Modele.xlsx</b>).'); statusEl.textContent='Modèle non chargé.'; return; }
+      if(!buf){ showBanner('err','Impossible de charger <b>Modèle.xlsx</b> (ou <b>Modele.xlsx</b>) dans ce dossier.'); statusEl.textContent='Modèle non chargé.'; return; }
       templateArrayBuffer = buf;
       statusEl.textContent='Modèle chargé ✔';
       updateExportState();
@@ -290,8 +282,9 @@
 
     function updateExportState(){
       const enabled = !!templateArrayBuffer && (processed.filtered?.debit?.length || processed.filtered?.ph?.length);
-      document.getElementById('exportTemplateBtn').disabled = !enabled;
-      document.getElementById('exportTemplateBtn').title = enabled ? '' : 'Importez, analysez et filtrez vos données';
+      const btn = document.getElementById('exportTemplateBtn');
+      btn.disabled = !enabled;
+      btn.title = enabled ? '' : 'Importez, analysez et filtrez vos données';
     }
 
     // ---------------------- ANALYSE & FILTRE ----------------------
@@ -326,7 +319,7 @@
       });
       return Object.keys(perDay).sort((a,b)=>dmyStrToUTCms(a)-dmyStrToUTCms(b)).map(k=>{
         const arr=perDay[k].sort((a,b)=>a.time-b.time); const last=arr[arr.length-1].value;
-        return {date:k, value:last, isAlert:isDebitAlert(last)};
+        return {date:k, value:last};
       });
     }
     function processPhData(data){
@@ -343,7 +336,7 @@
         const arr=(perDay[k]||[]).filter(v=>isFinite(v)&&v!==0);
         if(!arr.length) return null;
         const avg=arr.reduce((a,b)=>a+b,0)/arr.length;
-        return {date:k, value:avg, isAlert:isPhAlert(avg)};
+        return {date:k, value:avg};
       }).filter(Boolean);
     }
 
@@ -362,179 +355,161 @@
       processed.filtered.debit = processed.daily.debit.filter(d=>inRange(d.date));
       processed.filtered.ph    = processed.daily.ph.filter(p=>inRange(p.date));
 
-      // alertes
+      // alertes (pour tableau)
       const alerts=[];
       processed.filtered.debit.forEach(d=>{ if(isDebitAlert(d.value)) alerts.push({date:d.date,type:'Débit',value:d.value,th:`≥ ${DEBIT_THRESHOLD}`}); });
       processed.filtered.ph.forEach(p=>{ if(isPhAlert(p.value)) alerts.push({date:p.date,type:'pH',value:p.value,th:`≤ ${PH_MIN} ou ≥ ${PH_MAX}`}); });
       processed.alerts = alerts.sort((a,b)=>dmyStrToUTCms(a.date)-dmyStrToUTCms(b.date));
 
       renderTables();
-      const ar=document.getElementById('activeRange');
-      if(startMs!=null&&endMs!=null){ ar.textContent=`Période filtrée : ${toInputUTC(startMs)} → ${toInputUTC(endMs)}`; ar.classList.remove('hidden'); }
-      else ar.classList.add('hidden');
-
       updateExportState();
-    }
-    function resetFilter(){
-      const all=processed.allUTC;
-      if(all.length){
-        startMs=all[0]; endMs=all[all.length-1];
-        document.getElementById('startDate').value=toInputUTC(startMs);
-        document.getElementById('endDate').value=toInputUTC(endMs);
-      } else { startMs=endMs=null; }
-      applyFilter();
     }
 
     function renderTables(){
       const fmt=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
       const dRows=processed.filtered.debit
         .sort((a,b)=>dmyStrToUTCms(a.date)-dmyStrToUTCms(b.date))
-        .map(d=>`<tr class="${d.isAlert?'alert-row':''}">
+        .map(d=>`<tr class="${isDebitAlert(d.value)?'alert-row':''}">
           <td class="px-3 py-2 text-sm">${d.date}</td>
           <td class="px-3 py-2 text-sm font-medium">${fmt(d.value)}</td>
-          <td class="px-3 py-2 text-sm"><span class="px-2 py-1 rounded text-xs ${d.isAlert?'ko-pill':'ok-pill'}">${d.isAlert?'⚠️ Alerte':'✅ OK'}</span></td>
+          <td class="px-3 py-2 text-sm"><span class="px-2 py-1 rounded text-xs ${isDebitAlert(d.value)?'ko-pill':'ok-pill'}">${isDebitAlert(d.value)?'⚠️ Alerte':'✅ OK'}</span></td>
         </tr>`).join('');
       document.getElementById('debitTable').innerHTML=dRows || '<tr><td class="px-3 py-2 text-sm" colspan="3">Aucune donnée.</td></tr>';
 
       const pRows=processed.filtered.ph
         .sort((a,b)=>dmyStrToUTCms(a.date)-dmyStrToUTCms(b.date))
-        .map(p=>`<tr class="${p.isAlert?'alert-row':''}">
+        .map(p=>`<tr class="${isPhAlert(p.value)?'alert-row':''}">
           <td class="px-3 py-2 text-sm">${p.date}</td>
           <td class="px-3 py-2 text-sm font-medium">${fmt(p.value)}</td>
-          <td class="px-3 py-2 text-sm"><span class="px-2 py-1 rounded text-xs ${p.isAlert?'ko-pill':'ok-pill'}">${p.isAlert?'⚠️ Alerte':'✅ OK'}</span></td>
+          <td class="px-3 py-2 text-sm"><span class="px-2 py-1 rounded text-xs ${isPhAlert(p.value)?'ko-pill':'ok-pill'}">${isPhAlert(p.value)?'⚠️ Alerte':'✅ OK'}</span></td>
         </tr>`).join('');
       document.getElementById('phTable').innerHTML=pRows || '<tr><td class="px-3 py-2 text-sm" colspan="3">Aucune donnée.</td></tr>';
-
-      const aRows=processed.alerts.map(a=>`<tr>
-        <td class="px-3 py-2 text-sm">${a.date}</td>
-        <td class="px-3 py-2 text-sm font-medium">${a.type}</td>
-        <td class="px-3 py-2 text-sm">${fmt(a.value)}</td>
-        <td class="px-3 py-2 text-sm">${a.th}</td>
-      </tr>`).join('');
-      document.getElementById('alertsTable').innerHTML=aRows || '<tr><td class="px-3 py-2 text-sm" colspan="4">Aucune alerte.</td></tr>';
     }
 
-    // ---------------------- EXPORT AVEC MODÈLE + MFC ----------------------
+    // ---------------------- EXPORT AVEC MODÈLE (MFC + fallback) ----------------------
     async function exportWithTemplate(){
-      if(!templateArrayBuffer){ alert('Modèle non chargé.'); return; }
-      if(!processed.filtered.debit.length && !processed.filtered.ph.length){ alert('Aucune donnée filtrée à exporter.'); return; }
+      try{
+        if(!templateArrayBuffer){ alert('Modèle non chargé.'); return; }
+        if(!processed.filtered.debit.length && !processed.filtered.ph.length){ alert('Aucune donnée filtrée à exporter.'); return; }
 
-      const wb = new ExcelJS.Workbook();
-      await wb.xlsx.load(templateArrayBuffer);
-      let ws = wb.getWorksheet('suivi des débits et du pH') || wb.worksheets[0];
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.load(templateArrayBuffer);
+        let ws = wb.getWorksheet('suivi des débits et du pH') || wb.worksheets[0];
 
-      // 1) On efface d'anciennes valeurs/couleurs sans toucher aux dates
-      const zones = [
-        {cols:['C','D'], from:14, to:44},   // Jan
-        {cols:['H','I'], from:14, to:41},   // Fév
-        {cols:['M','N'], from:14, to:44},   // Mar
-        {cols:['C','D'], from:50, to:79},   // Avr
-        {cols:['H','I'], from:50, to:80},   // Mai
-        {cols:['M','N'], from:50, to:79},   // Juin
-        {cols:['C','D'], from:86, to:116},  // Juil
-        {cols:['H','I'], from:86, to:116},  // Août
-        {cols:['M','N'], from:86, to:115}   // Sept
-      ];
-      zones.forEach(z=>{
-        for(let r=z.from;r<=z.to;r++){
-          z.cols.forEach(c=>{
-            const cell=ws.getCell(`${c}${r}`);
-            cell.value=null; cell.fill=null; cell.numFmt=undefined;
+        // 1) reset valeurs/couleurs précédentes
+        const zones = [
+          {cols:['C','D'], from:14, to:44},   // Jan
+          {cols:['H','I'], from:14, to:41},   // Fév
+          {cols:['M','N'], from:14, to:44},   // Mar
+          {cols:['C','D'], from:50, to:79},   // Avr
+          {cols:['H','I'], from:50, to:80},   // Mai
+          {cols:['M','N'], from:50, to:79},   // Juin
+          {cols:['C','D'], from:86, to:116},  // Juil
+          {cols:['H','I'], from:86, to:116},  // Août
+          {cols:['M','N'], from:86, to:115}   // Sept
+        ];
+        zones.forEach(z=>{
+          for(let r=z.from;r<=z.to;r++){
+            z.cols.forEach(c=>{
+              const cell=ws.getCell(`${c}${r}`);
+              cell.value=null; cell.fill=null; cell.numFmt=undefined;
+            });
+          }
+        });
+
+        // 2) écrire valeurs aux adresses exactes
+        const mapD=new Map(processed.filtered.debit.map(d=>[d.date,d]));
+        const mapP=new Map(processed.filtered.ph.map(p=>[p.date,p]));
+        const allDates=new Set([...mapD.keys(),...mapP.keys()]);
+        const sorted=Array.from(allDates).map(d=>({dStr:d, t:dmyStrToUTCms(d)})).filter(x=>x.t!=null).sort((a,b)=>a.t-b.t);
+
+        sorted.forEach(o=>{
+          const dt=new Date(o.t); if(dt.getUTCFullYear()!==2025) return;
+          const m=dt.getUTCMonth(); const cfg=MONTH_MAP_2025[m]; if(!cfg) return;
+          const day=dt.getUTCDate(); const row=cfg.startRow + (day-1);
+          if(row<cfg.startRow || row>cfg.endRow) return;
+
+          const dRec=mapD.get(o.dStr), pRec=mapP.get(o.dStr);
+          const dCell=ws.getCell(`${cfg.debitCol}${row}`);
+          const pCell=ws.getCell(`${cfg.phCol}${row}`);
+
+          if(dRec){
+            const v=Number(dRec.value);
+            dCell.value = isFinite(v)?v:null;
+            if(isFinite(v)) dCell.numFmt=NUM_FMT;
+          } else { dCell.value=null; }
+
+          if(pRec){
+            const v=Number(pRec.value);
+            pCell.value = isFinite(v)?v:null;
+            if(isFinite(v)) pCell.numFmt=NUM_FMT;
+          } else { pCell.value=null; }
+        });
+
+        // 3) essayer d'ajouter la MFC ; si échec → fallback couleur directe
+        const debitRefs = ['C14:C44','H14:H41','M14:M44','C50:C79','H50:H80','M50:M79','C86:C116','H86:H116','M86:M115'];
+        const phRefs    = ['D14:D44','I14:I41','N14:N44','D50:D79','I50:I80','N50:N79','D86:D116','I86:I116','N86:N115'];
+
+        let mfcOk = false;
+        try{
+          // purge anciennes MFC si présentes
+          if (ws.model && Array.isArray(ws.model.conditionalFormattings)) ws.model.conditionalFormattings = [];
+          // styles
+          const RED  = { fill:{ type:'pattern', pattern:'solid', fgColor:{argb:'FFFF0000'}, bgColor:{argb:'FFFF0000'} } };
+          const GREEN= { fill:{ type:'pattern', pattern:'solid', fgColor:{argb:'FF00B050'}, bgColor:{argb:'FF00B050'} } };
+
+          // débit
+          debitRefs.forEach(ref=>{
+            ws.addConditionalFormatting({
+              ref,
+              rules: [
+                { type:'cellIs', operator:'greaterThanOrEqual', formulae:[String(DEBIT_THRESHOLD)], style: RED  },
+                { type:'cellIs', operator:'lessThan',            formulae:[String(DEBIT_THRESHOLD)], style: GREEN}
+              ]
+            });
+          });
+          // pH
+          phRefs.forEach(ref=>{
+            const baseCol = ref.split(':')[0].replace(/\d+/g,''); // ex: 'D'
+            ws.addConditionalFormatting({ ref, rules:[{ type:'cellIs', operator:'lessThanOrEqual', formulae:[String(PH_MIN)], style: RED }]});
+            ws.addConditionalFormatting({ ref, rules:[{ type:'cellIs', operator:'greaterThanOrEqual', formulae:[String(PH_MAX)], style: RED }]});
+            ws.addConditionalFormatting({ ref, rules:[{ type:'expression', formulae:[`AND(${baseCol}1>${PH_MIN},${baseCol}1<${PH_MAX})`.replace(/1$/, '')], style: GREEN }]});
+            // Remarque: Excel ignore l'index de ligne dans l'expression et applique la logique par cellule.
+          });
+
+          mfcOk = true;
+        }catch(e){
+          console.warn('MFC indisponible, fallback couleurs directes.', e);
+          mfcOk = false;
+        }
+
+        if(!mfcOk){
+          // Fallback : recolorer en dur selon seuils (garanti)
+          sorted.forEach(o=>{
+            const dt=new Date(o.t); if(dt.getUTCFullYear()!==2025) return;
+            const m=dt.getUTCMonth(); const cfg=MONTH_MAP_2025[m]; if(!cfg) return;
+            const row=cfg.startRow + (dt.getUTCDate()-1);
+            const dCell=ws.getCell(`${cfg.debitCol}${row}`);
+            const pCell=ws.getCell(`${cfg.phCol}${row}`);
+
+            if(dCell.value!=null && dCell.value!==''){
+              const v=Number(dCell.value);
+              dCell.fill=null; colorize(dCell, isFinite(v)?isDebitAlert(v):null);
+            }
+            if(pCell.value!=null && pCell.value!==''){
+              const v=Number(pCell.value);
+              pCell.fill=null; colorize(pCell, isFinite(v)?isPhAlert(v):null);
+            }
           });
         }
-      });
 
-      // 2) On écrit les valeurs aux adresses EXACTES (2025)
-      const mapD=new Map(processed.filtered.debit.map(d=>[d.date,d]));
-      const mapP=new Map(processed.filtered.ph.map(p=>[p.date,p]));
-      const allDates=new Set([...mapD.keys(),...mapP.keys()]);
-      const sorted=Array.from(allDates).map(d=>({dStr:d, t:dmyStrToUTCms(d)})).filter(x=>x.t!=null).sort((a,b)=>a.t-b.t);
-
-      sorted.forEach(o=>{
-        const dt=new Date(o.t); if(dt.getUTCFullYear()!==2025) return;
-        const m=dt.getUTCMonth(); const cfg=MONTH_MAP_2025[m]; if(!cfg) return;
-        const day=dt.getUTCDate(); const row=cfg.startRow + (day-1);
-        if(row<cfg.startRow || row>cfg.endRow) return;
-
-        const dRec=mapD.get(o.dStr), pRec=mapP.get(o.dStr);
-        const debCell=ws.getCell(`${cfg.debitCol}${row}`);
-        const phCell =ws.getCell(`${cfg.phCol}${row}`);
-
-        if(dRec){
-          const v=Number(dRec.value);
-          debCell.value = isFinite(v)?v:null;
-          if(isFinite(v)) debCell.numFmt=NUM_FMT;
-        } else { debCell.value=null; }
-
-        if(pRec){
-          const v=Number(pRec.value);
-          phCell.value = isFinite(v)?v:null;
-          if(isFinite(v)) phCell.numFmt=NUM_FMT;
-        } else { phCell.value=null; }
-      });
-
-      // 3) MISE EN FORME CONDITIONNELLE (MFC) — couleurs garanties par Excel
-      //    NB : ExcelJS 4.x supporte addConditionalFormatting.
-      //    On pose des règles sur les plages “Débit” et “pH”.
-
-      // Construit les réf de plages par type
-      const debitRefs = [
-        'C14:C44','H14:H41','M14:M44', // Jan, Fév, Mar
-        'C50:C79','H50:H80','M50:M79', // Avr, Mai, Juin
-        'C86:C116','H86:H116','M86:M115' // Juil, Août, Sept
-      ];
-      const phRefs = [
-        'D14:D44','I14:I41','N14:N44', // Jan, Fév, Mar
-        'D50:D79','I50:I80','N50:N79', // Avr, Mai, Juin
-        'D86:D116','I86:I116','N86:N115' // Juil, Août, Sept
-      ];
-
-      // (a) On nettoie d’éventuelles anciennes MFC
-      try {
-        ws.model.conditionalFormattings = [];
-      } catch(_) {}
-
-      // Helper style
-      const RED  = { fill:{ type:'pattern', pattern:'solid', bgColor:{argb:'FFFF0000'}, fgColor:{argb:'FFFF0000'} } };
-      const GREEN= { fill:{ type:'pattern', pattern:'solid', bgColor:{argb:'FF00B050'}, fgColor:{argb:'FF00B050'} } };
-
-      // (b) Règles Débit : rouge si >= 220, vert sinon (<220)
-      debitRefs.forEach(ref=>{
-        ws.addConditionalFormatting({
-          ref,
-          rules: [
-            { type:'cellIs', operator:'greaterThanOrEqual', formulae:[String(DEBIT_THRESHOLD)], style: RED  },
-            { type:'cellIs', operator:'lessThan',            formulae:[String(DEBIT_THRESHOLD)], style: GREEN}
-          ]
-        });
-      });
-
-      // (c) Règles pH : rouge si <= 5.5, rouge si >= 8.5, vert si entre 5.5 et 8.5
-      phRefs.forEach(ref=>{
-        ws.addConditionalFormatting({
-          ref,
-          rules: [
-            { type:'cellIs', operator:'lessThanOrEqual', formulae:[String(PH_MIN)], style: RED },
-          ]
-        });
-        ws.addConditionalFormatting({
-          ref,
-          rules: [
-            { type:'cellIs', operator:'greaterThanOrEqual', formulae:[String(PH_MAX)], style: RED },
-          ]
-        });
-        // vert pour la zone conforme (strictement entre)
-        ws.addConditionalFormatting({
-          ref,
-          rules: [
-            { type:'expression', formulae:[`AND(${ref.split(':')[0]}>${PH_MIN},${ref.split(':')[0]}<${PH_MAX})`], style: GREEN }
-          ]
-        });
-      });
-
-      // 4) export
-      const buf=await wb.xlsx.writeBuffer();
-      saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'export_dep_ph_modele_MFC.xlsx');
+        const buf=await wb.xlsx.writeBuffer();
+        saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'export_dep_ph_modele.xlsx');
+        showBanner('ok', mfcOk ? 'Export OK ✔ (couleurs via MFC).' : 'Export OK ✔ (couleurs appliquées en fallback).');
+      }catch(err){
+        console.error(err);
+        showBanner('err','❌ Export échoué. Ouvrez la console pour le détail. Vérifiez surtout que la page est servie en <b>http://</b> pour que le modèle soit bien chargé.');
+      }
     }
   </script>
 </body>

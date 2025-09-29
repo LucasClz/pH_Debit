@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Analyseur Débit & pH — Modèle par défaut (MFC robuste + Oct–Déc)</title>
+  <title>Analyseur Débit & pH — Modèle par défaut (MFC robuste + écarts mensuels)</title>
 
   <!-- UI -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -31,7 +31,7 @@
   <div class="container mx-auto px-4 py-8 max-w-7xl">
     <header class="mb-6">
       <h1 class="text-3xl font-bold text-gray-800">📊 Analyseur Débit & pH — Modèle par défaut</h1>
-      <p class="text-gray-600">Couleurs via <b>MFC</b> (avec fallback si besoin). Octobre, Novembre et Décembre ajoutés.</p>
+      <p class="text-gray-600">Couleurs via <b>MFC</b> (zéro/vide exclus), pH conforme en vert, et <b>sommes d’écarts</b> Q11:Q22 / R11:R22.</p>
     </header>
 
     <section class="bg-white rounded-lg shadow p-6 mb-6">
@@ -143,7 +143,7 @@
     const PH_MIN = 5.5, PH_MAX = 8.5;
     const NUM_FMT = '0.00';
 
-    // mapping exact 2025 (Jan..Sep existants) + Oct–Nov–Déc (selon tes consignes)
+    // mapping exact 2025 (Jan..Sep) + Oct–Nov–Déc
     const MONTH_MAP_2025 = {
       0: { jourCol:'B', debitCol:'C', phCol:'D', startRow:14,  endRow:44  }, // Jan
       1: { jourCol:'G', debitCol:'H', phCol:'I', startRow:14,  endRow:41  }, // Fév
@@ -154,9 +154,9 @@
       6: { jourCol:'B', debitCol:'C', phCol:'D', startRow:86,  endRow:116 }, // Juil
       7: { jourCol:'G', debitCol:'H', phCol:'I', startRow:86,  endRow:116 }, // Août
       8: { jourCol:'L', debitCol:'M', phCol:'N', startRow:86,  endRow:115 }, // Sept
-      9: { jourCol:'B', debitCol:'C', phCol:'D', startRow:122, endRow:152 }, // Oct (C/D 122–152)
-      10:{ jourCol:'G', debitCol:'H', phCol:'I', startRow:122, endRow:151 }, // Nov (H/I 122–151)
-      11:{ jourCol:'L', debitCol:'M', phCol:'N', startRow:122, endRow:152 }  // Déc (M/N 122–152)
+      9: { jourCol:'B', debitCol:'C', phCol:'D', startRow:122, endRow:152 }, // Oct
+      10:{ jourCol:'G', debitCol:'H', phCol:'I', startRow:122, endRow:151 }, // Nov
+      11:{ jourCol:'L', debitCol:'M', phCol:'N', startRow:122, endRow:152 }  // Déc
     };
 
     // plages par type (pour MFC et reset)
@@ -164,13 +164,13 @@
       'C14:C44','H14:H41','M14:M44',
       'C50:C79','H50:H80','M50:M79',
       'C86:C116','H86:H116','M86:M115',
-      'C122:C152','H122:H151','M122:M152' // Oct, Nov, Déc
+      'C122:C152','H122:H151','M122:M152'
     ];
     const PH_REFS = [
       'D14:D44','I14:I41','N14:N44',
       'D50:D79','I50:I80','N50:N79',
       'D86:D116','I86:I116','N86:N115',
-      'D122:D152','I122:I151','N122:N152' // Oct, Nov, Déc
+      'D122:D152','I122:I151','N122:N152'
     ];
 
     // Couleurs directes (fallback)
@@ -403,7 +403,7 @@
       document.getElementById('phTable').innerHTML=pRows || '<tr><td class="px-3 py-2 text-sm" colspan="3">Aucune donnée.</td></tr>';
     }
 
-    // ---------------------- EXPORT AVEC MODÈLE (MFC + fallback) ----------------------
+    // ---------------------- EXPORT AVEC MODÈLE (MFC robuste + formules Q/R) ----------------------
     async function exportWithTemplate(){
       try{
         if(!templateArrayBuffer){ alert('Modèle non chargé.'); return; }
@@ -419,7 +419,7 @@
           {cols:['C','D'], from:14, to:44},{cols:['H','I'], from:14, to:41},{cols:['M','N'], from:14, to:44},
           {cols:['C','D'], from:50, to:79},{cols:['H','I'], from:50, to:80},{cols:['M','N'], from:50, to:79},
           {cols:['C','D'], from:86, to:116},{cols:['H','I'], from:86, to:116},{cols:['M','N'], from:86, to:115},
-          // Oct–Nov–Déc (ajoutés)
+          // Oct–Nov–Déc
           {cols:['C','D'], from:122, to:152}, // Oct
           {cols:['H','I'], from:122, to:151}, // Nov
           {cols:['M','N'], from:122, to:152}  // Déc
@@ -462,29 +462,32 @@
           } else { pCell.value=null; }
         });
 
-        // 3) essayer d'ajouter la MFC ; si échec → fallback couleur directe
+        // 3) MISE EN FORME CONDITIONNELLE (zéro/vide exclus)
         let mfcOk = false;
         try{
-          // purge anciennes MFC si présentes
           if (ws.model && Array.isArray(ws.model.conditionalFormattings)) ws.model.conditionalFormattings = [];
 
           const RED  = { fill:{ type:'pattern', pattern:'solid', fgColor:{argb:'FFFF0000'}, bgColor:{argb:'FFFF0000'} } };
           const GREEN= { fill:{ type:'pattern', pattern:'solid', fgColor:{argb:'FF00B050'}, bgColor:{argb:'FF00B050'} } };
 
-          // Débit : rouge >=220, vert <220
+          const firstAddr = (ref)=>ref.split(':')[0]; // ex 'C14'
+          // Débit : rouge si v>=220 ; vert si v<220 ET v>0 (0/vide => pas de couleur)
           DEBIT_REFS.forEach(ref=>{
+            const addr=firstAddr(ref);
             ws.addConditionalFormatting({ ref, rules:[
-              { type:'cellIs', operator:'greaterThanOrEqual', formulae:[String(DEBIT_THRESHOLD)], style: RED  },
-              { type:'cellIs', operator:'lessThan',            formulae:[String(DEBIT_THRESHOLD)], style: GREEN}
+              { type:'expression', formulae:[`IFERROR(VALUE(${addr}),0)>=${DEBIT_THRESHOLD}`], style: RED },
+              { type:'expression', formulae:[`AND(IFERROR(VALUE(${addr}),0)>0,IFERROR(VALUE(${addr}),0)<${DEBIT_THRESHOLD})`], style: GREEN }
             ]});
           });
 
-          // pH : rouge <=5.5, rouge >=8.5, vert entre (strict)
+          // pH : rouge si v<=5.5 (et v>0), rouge si v>=8.5, vert si 5.5<v<8.5 (v>0)
           PH_REFS.forEach(ref=>{
-            ws.addConditionalFormatting({ ref, rules:[{ type:'cellIs', operator:'lessThanOrEqual', formulae:[String(PH_MIN)], style: RED }]});
-            ws.addConditionalFormatting({ ref, rules:[{ type:'cellIs', operator:'greaterThanOrEqual', formulae:[String(PH_MAX)], style: RED }]});
-            // expression générique cellule courante (pas de référence figée)
-            ws.addConditionalFormatting({ ref, rules:[{ type:'expression', formulae:[`AND(INDIRECT(ADDRESS(ROW(),COLUMN()))>${PH_MIN},INDIRECT(ADDRESS(ROW(),COLUMN()))<${PH_MAX})`], style: GREEN }]});
+            const addr=firstAddr(ref);
+            ws.addConditionalFormatting({ ref, rules:[
+              { type:'expression', formulae:[`AND(IFERROR(VALUE(${addr}),0)>0,IFERROR(VALUE(${addr}),0)<=${PH_MIN})`], style: RED },
+              { type:'expression', formulae:[`IFERROR(VALUE(${addr}),0)>=${PH_MAX}`], style: RED },
+              { type:'expression', formulae:[`AND(IFERROR(VALUE(${addr}),0)>${PH_MIN},IFERROR(VALUE(${addr}),0)<${PH_MAX})`], style: GREEN }
+            ]});
           });
 
           mfcOk = true;
@@ -493,29 +496,55 @@
           mfcOk = false;
         }
 
+        // 4) Fallback couleurs directes (si MFC KO) — on ignore 0/vide
         if(!mfcOk){
-          // Fallback : recolorer en dur selon seuils (garanti)
           sorted.forEach(o=>{
             const dt=new Date(o.t); if(dt.getUTCFullYear()!==2025) return;
             const m=dt.getUTCMonth(); const cfg=MONTH_MAP_2025[m]; if(!cfg) return;
             const row=cfg.startRow + (dt.getUTCDate()-1);
             const dCell=ws.getCell(`${cfg.debitCol}${row}`);
             const pCell=ws.getCell(`${cfg.phCol}${row}`);
-
-            if(dCell.value!=null && dCell.value!==''){
+            if(dCell.value!=null && dCell.value!=='' && Number(dCell.value)>0){
               const v=Number(dCell.value);
               dCell.fill=null; colorize(dCell, isFinite(v)?isDebitAlert(v):null);
-            }
-            if(pCell.value!=null && pCell.value!==''){
+            } else dCell.fill=null;
+            if(pCell.value!=null && pCell.value!=='' && Number(pCell.value)>0){
               const v=Number(pCell.value);
               pCell.fill=null; colorize(pCell, isFinite(v)?isPhAlert(v):null);
-            }
+            } else pCell.fill=null;
           });
         }
 
+        // 5) FORMULES Q11..Q22 (écarts Débit) et R11..R22 (écarts pH)
+        // Débit : écart = (v-220) si v>220, sinon 0 ; on ignore 0/vide naturellement.
+        const monthDebitRanges = [
+          'C14:C44','H14:H41','M14:M44','C50:C79','H50:H80','M50:M79',
+          'C86:C116','H86:H116','M86:M115','C122:C152','H122:H151','M122:M152'
+        ];
+        // pH : écart = (5.5-v) si v<5.5 ; (v-8.5) si v>8.5 ; sinon 0.
+        const monthPhRanges = [
+          'D14:D44','I14:I41','N14:N44','D50:D79','I50:I80','N50:N79',
+          'D86:D116','I86:I116','N86:N115','D122:D152','I122:I151','N122:N152'
+        ];
+
+        // Lignes Q/R 11..22 → index 0..11
+        for(let i=0;i<12;i++){
+          const qCell = ws.getCell(11+i, 17); // Q=17
+          const rCell = ws.getCell(11+i, 18); // R=18
+          const dRef = monthDebitRanges[i];
+          const pRef = monthPhRanges[i];
+
+          // Débit : SUMPRODUCT((range>220)*(range-220))
+          qCell.value = { formula: `SUMPRODUCT((${dRef}>${DEBIT_THRESHOLD})*(${dRef}-${DEBIT_THRESHOLD}))` };
+
+          // pH : SUMPRODUCT( (range>0)*((range<5.5)*(5.5-range) + (range>8.5)*(range-8.5)) )
+          rCell.value = { formula: `SUMPRODUCT((${pRef}>0)*((${pRef}<${PH_MIN})*(${PH_MIN}-${pRef}) + (${pRef}>${PH_MAX})*(${pRef}-${PH_MAX})))` };
+        }
+
+        // 6) export
         const buf=await wb.xlsx.writeBuffer();
         saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'export_dep_ph_modele.xlsx');
-        showBanner('ok', mfcOk ? 'Export OK ✔ (couleurs via MFC).' : 'Export OK ✔ (couleurs appliquées en fallback).');
+        showBanner('ok', mfcOk ? 'Export OK ✔ (MFC active, 0/vide exclus, pH vert entre 5.5 et 8.5).' : 'Export OK ✔ (couleurs appliquées en fallback ; 0/vide exclus).');
       }catch(err){
         console.error(err);
         showBanner('err','❌ Export échoué. Vérifiez que la page est servie en <b>http://</b> et regardez la console pour le détail.');

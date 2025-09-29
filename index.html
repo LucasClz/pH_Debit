@@ -5,29 +5,15 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>Analyseur Débit & pH — Modèle Excel par défaut (Modele.xlsx)</title>
   <meta name="description" content="Analyse Débit & pH avec export CSV et Excel identique via le modèle par défaut Modele.xlsx." />
-
-  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- XLSX (lecture) + FileSaver -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-
-  <!-- ExcelJS (écriture XLSX avec styles) -->
   <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
-
   <script>
     tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: {50:'#f0f9ff',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8'}
-          }
-        }
-      }
+      theme: { extend: { colors: { primary:{50:'#f0f9ff',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8'} } } }
     }
   </script>
-
   <style>
     .upload-zone{border:2px dashed #d1d5db;transition:all .3s ease}
     .upload-zone:hover{border-color:#3b82f6;background:#f8fafc}
@@ -40,7 +26,6 @@
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-  <!-- Bandeau statut modèle -->
   <div id="modelBanner" class="hidden">
     <div id="modelBannerInner" class="max-w-7xl mx-auto px-4 py-3 text-sm"></div>
   </div>
@@ -48,24 +33,17 @@
   <div class="container mx-auto px-4 py-8">
     <header class="text-center mb-8">
       <h1 class="text-4xl font-bold text-gray-800 mb-2">📊 Analyseur Débit & pH</h1>
-      <p class="text-gray-600 text-lg">Modèle Excel par défaut : <span class="font-semibold">Modele.xlsx</span> (auto-chargé)</p>
+      <p class="text-gray-600 text-lg">Modèle Excel par défaut : <span class="font-semibold">Modele.xlsx</span></p>
     </header>
 
     <main class="max-w-7xl mx-auto">
-      <!-- Import -->
       <section class="bg-white rounded-lg shadow-lg p-6 mb-8">
         <h2 class="text-2xl font-semibold text-gray-800 mb-6">📁 Importation des fichiers</h2>
-
         <div class="grid md:grid-cols-2 gap-6">
-          <!-- Débit -->
           <div>
             <h3 class="text-lg font-medium text-gray-700 mb-3">💧 Fichier Débit (dernière valeur/jour)</h3>
             <div id="uploadZoneDebit" class="upload-zone rounded-lg p-6 text-center cursor-pointer">
-              <div class="mb-3">
-                <svg class="mx-auto h-10 w-10 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.413V13H5.5z"/>
-                </svg>
-              </div>
+              <svg class="mx-auto h-10 w-10 text-blue-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.413V13H5.5z"/></svg>
               <p class="text-sm text-gray-600">Déposez le fichier débit ici</p>
               <p class="text-xs text-gray-400 mt-1">Seuil d'alerte: &gt; 220</p>
             </div>
@@ -78,15 +56,10 @@
             </div>
           </div>
 
-          <!-- pH -->
           <div>
             <h3 class="text-lg font-medium text-gray-700 mb-3">🧪 Fichier pH (moyenne/jour)</h3>
             <div id="uploadZonePh" class="upload-zone rounded-lg p-6 text-center cursor-pointer">
-              <div class="mb-3">
-                <svg class="mx-auto h-10 w-10 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.413V13H5.5z"/>
-                </svg>
-              </div>
+              <svg class="mx-auto h-10 w-10 text-green-400 mb-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5.5 13a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 13H11V9.413l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.413V13H5.5z"/></svg>
               <p class="text-sm text-gray-600">Déposez le fichier pH ici</p>
               <p class="text-xs text-gray-400 mt-1">Seuil d'alerte: 5.5 - 8.5</p>
             </div>
@@ -100,7 +73,6 @@
           </div>
         </div>
 
-        <!-- Filtres -->
         <div class="mt-8 grid sm:grid-cols-[1fr_1fr_auto_auto] gap-3 items-end">
           <div>
             <label for="startDate" class="block text-sm text-gray-600 mb-1">Du</label>
@@ -120,7 +92,6 @@
         </div>
       </section>
 
-      <!-- Résultats -->
       <section id="resultsSection" class="hidden">
         <div class="bg-white rounded-t-lg shadow-lg">
           <div class="flex border-b border-gray-200">
@@ -131,7 +102,6 @@
         </div>
 
         <div class="bg-white rounded-b-lg shadow-lg">
-          <!-- Daily -->
           <div id="dailyTab" class="tab-content p-6">
             <div class="flex flex-wrap gap-3 justify-between items-center mb-4">
               <h2 class="text-2xl font-semibold text-gray-800">📊 Données journalières</h2>
@@ -167,7 +137,6 @@
             </div>
           </div>
 
-          <!-- Synthèses -->
           <div id="synthesisTab" class="tab-content p-6 hidden">
             <div class="flex flex-wrap gap-3 justify-between items-center mb-4">
               <h2 class="text-2xl font-semibold text-gray-800">📈 Synthèses</h2>
@@ -202,7 +171,6 @@
             </div>
           </div>
 
-          <!-- Alertes -->
           <div id="alertsTab" class="tab-content p-6 hidden">
             <h2 class="text-2xl font-semibold text-gray-800 mb-4">⚠️ Récapitulatif des alertes</h2>
             <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
@@ -229,793 +197,449 @@
   </div>
 
   <script>
-    // ==================== ÉTAT GLOBAL ====================
-    let debitData = [];
-    let phData = [];
+    // ===== Etat global =====
+    let debitData = [], phData = [];
     let processedData = { daily:{debit:[],ph:[]}, monthly:[], yearly:[], alerts:[] };
     let filteredData  = { daily:{debit:[],ph:[]}, monthly:[], yearly:[], alerts:[] };
-
-    // Modèle Excel (chargé automatiquement)
-    let templateArrayBuffer = null;
-    let templateLoaded = false;
-
-    // bornes filtre en UTC (ms)
-    let startMs = null;
-    let endMs   = null;
+    let templateArrayBuffer = null, templateLoaded = false;
+    let startMs = null, endMs = null;
 
     const DEBIT_THRESHOLD = 220;
-    const PH_MIN = 5.5;
-    const PH_MAX = 8.5;
+    const PH_MIN = 5.5, PH_MAX = 8.5;
     const MONTHS_FR = ['JANVIER','FÉVRIER','MARS','AVRIL','MAI','JUIN','JUILLET','AOÛT','SEPTEMBRE','OCTOBRE','NOVEMBRE','DÉCEMBRE'];
 
-    // ==================== UI Helpers ====================
+    // ===== Bannière modèle =====
     function showModelBanner(type, html){
       const bar = document.getElementById('modelBanner');
       const inner = document.getElementById('modelBannerInner');
       inner.innerHTML = html;
-      // types: info/ok/warn/error
       const classes = {
-        info: 'bg-blue-50 text-blue-800 border border-blue-200',
-        ok: 'bg-green-50 text-green-800 border border-green-200',
-        warn: 'bg-amber-50 text-amber-800 border border-amber-200',
-        error: 'bg-red-50 text-red-800 border border-red-200'
+        info:'bg-blue-50 text-blue-800 border border-blue-200',
+        ok:'bg-green-50 text-green-800 border border-green-200',
+        warn:'bg-amber-50 text-amber-800 border border-amber-200',
+        error:'bg-red-50 text-red-800 border border-red-200'
       };
-      bar.className = '';
-      bar.classList.add(classes[type] || classes.info);
-      bar.classList.remove('hidden');
+      bar.className=''; bar.classList.add(classes[type]||classes.info); bar.classList.remove('hidden');
     }
 
-    // ==================== CHARGEMENT DU MODÈLE ====================
-    async function loadDefaultTemplate() {
-      // Si ouvert en file://, prévenir (fetch bloqué par CORS)
-      if (location.protocol === 'file:') {
-        showModelBanner('warn', 'La page est ouverte en <code>file://</code>. Les navigateurs bloquent <code>fetch()</code> vers les fichiers locaux. '
-          + 'Pour auto-charger <b>Modele.xlsx</b>, servez ce dossier via un petit serveur local (ex. <code>python -m http.server</code>) '
-          + 'ou utilisez l’export <i>Excel formaté (fallback)</i>.');
+    // ===== Chargement modèle par défaut =====
+    async function loadDefaultTemplate(){
+      if (location.protocol === 'file:'){
+        showModelBanner('warn','Page ouverte en <code>file://</code>. Les navigateurs bloquent <code>fetch()</code> vers les fichiers locaux. '
+          + 'Servez ce dossier via <code>python -m http.server</code> (ou Live Server) pour charger <b>Modele.xlsx</b>.');
+        updateTemplateButtonState();
         return;
       }
-
-      async function tryFetch(path){
-        try{
-          const resp = await fetch(path, { cache: 'no-store' });
-          if (!resp.ok) return null;
-          const buf = await resp.arrayBuffer();
-          return { name: path, buf };
-        }catch(_){ return null; }
-      }
-
-      // Essais : sans accent puis avec accent
-      let res = await tryFetch('Modele.xlsx');
-      if (!res) res = await tryFetch('Modèle.xlsx');
-
-      if (res){
-        templateArrayBuffer = res.buf;
-        templateLoaded = true;
-        showModelBanner('ok', `Modèle chargé automatiquement : <b>${res.name}</b>.`);
-      } else {
-        templateLoaded = false;
-        showModelBanner('error', `Impossible de charger <b>Modele.xlsx</b> (ou <b>Modèle.xlsx</b>) depuis ce dossier. `
-          + `Vérifie que le fichier est bien à côté de cette page et accessible (essaie d’ouvrir <code>${new URL('Modele.xlsx', document.baseURI).href}</code> dans le navigateur).`);
-      }
+      async function tryFetch(path){ try{ const r=await fetch(path,{cache:'no-store'}); if(!r.ok) return null; return {name:path,buf:await r.arrayBuffer()}; }catch(_){ return null; } }
+      let res = await tryFetch('Modele.xlsx'); if(!res) res = await tryFetch('Modèle.xlsx');
+      if (res){ templateArrayBuffer=res.buf; templateLoaded=true; showModelBanner('ok',`Modèle chargé : <b>${res.name}</b>.`); }
+      else { templateLoaded=false; showModelBanner('error','Impossible de charger <b>Modele.xlsx</b> (ou <b>Modèle.xlsx</b>) à côté de cette page.'); }
       updateTemplateButtonState();
     }
-
     function updateTemplateButtonState(){
-      const btn = document.getElementById('exportExcelTemplateBtn');
-      if (!btn) return;
-      btn.disabled = !templateLoaded;
-      btn.classList.toggle('opacity-60', !templateLoaded);
-      btn.classList.toggle('cursor-not-allowed', !templateLoaded);
+      const btn=document.getElementById('exportExcelTemplateBtn'); if(!btn) return;
+      btn.disabled=!templateLoaded; btn.classList.toggle('opacity-60',!templateLoaded); btn.classList.toggle('cursor-not-allowed',!templateLoaded);
       btn.title = templateLoaded ? '' : 'Modele.xlsx introuvable ou non chargé';
     }
 
-    // ==================== INIT GÉNÉRALE ====================
-    window.addEventListener('load', function() {
-      // Onglets
+    // ===== Init =====
+    window.addEventListener('load',()=>{
       document.querySelectorAll('.nav-tab').forEach(tab=>{
-        tab.addEventListener('click', ()=>{
-          const target = tab.dataset.tab;
+        tab.addEventListener('click',()=>{
+          const target=tab.dataset.tab;
           document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
           tab.classList.add('active');
           document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));
           document.getElementById(target+'Tab').classList.remove('hidden');
         });
       });
-
-      // Uploads data
-      setupFileUpload('Debit', (data)=>{ debitData=data; checkReady(); });
-      setupFileUpload('Ph',    (data)=>{ phData=data;   checkReady(); });
-
-      // Charger le modèle par défaut automatiquement
+      setupFileUpload('Debit',(d)=>{debitData=d;checkReady();});
+      setupFileUpload('Ph',(d)=>{phData=d;checkReady();});
       loadDefaultTemplate();
 
-      // Boutons exports
-      document.getElementById('exportExcelTemplateBtn').addEventListener('click', exportExcelUsingTemplate);
-
-      const analyzeBtn = document.getElementById('analyzeBtn');
-      analyzeBtn.addEventListener('click', ()=>{
-        if (!debitData.length || !phData.length) { alert('Les deux fichiers sont requis.'); return; }
+      document.getElementById('analyzeBtn').addEventListener('click',()=>{
+        if(!debitData.length||!phData.length){ alert('Les deux fichiers sont requis.'); return; }
         processedData.daily.debit = processDebitData(debitData);
         processedData.daily.ph    = processPhData(phData);
 
-        // bornes par défaut = min/max (UTC)
-        const allUTC = Array.from(new Set([
-          ...processedData.daily.debit.map(d=>d.date),
-          ...processedData.daily.ph.map(d=>d.date)
-        ])).map(dmy=>dmyStrToUTCms(dmy)).filter(Boolean).sort((a,b)=>a-b);
-
-        const startDateInput = document.getElementById('startDate');
-        const endDateInput   = document.getElementById('endDate');
+        const allUTC = Array.from(new Set([...processedData.daily.debit.map(d=>d.date),...processedData.daily.ph.map(d=>d.date)]))
+          .map(d=>dmyStrToUTCms(d)).filter(Boolean).sort((a,b)=>a-b);
         if (allUTC.length){
-          startDateInput.value = toInputUTC(allUTC[0]);
-          endDateInput.value   = toInputUTC(allUTC[allUTC.length-1]);
+          document.getElementById('startDate').value = toInputUTC(allUTC[0]);
+          document.getElementById('endDate').value   = toInputUTC(allUTC[allUTC.length-1]);
         }
-
-        applyFilter(); // applique la plage visible
+        applyFilter();
         document.getElementById('resultsSection').classList.remove('hidden');
       });
 
-      // Filtres
-      document.getElementById('applyFilterBtn').addEventListener('click', ()=>applyFilter());
-      document.getElementById('resetFilterBtn').addEventListener('click', ()=>resetFilter());
-      document.getElementById('startDate').addEventListener('change', ()=>applyFilter());
-      document.getElementById('endDate').addEventListener('change', ()=>applyFilter());
+      document.getElementById('applyFilterBtn').addEventListener('click',()=>applyFilter());
+      document.getElementById('resetFilterBtn').addEventListener('click',()=>resetFilter());
+      document.getElementById('startDate').addEventListener('change',()=>applyFilter());
+      document.getElementById('endDate').addEventListener('change',()=>applyFilter());
 
-      // Exports CSV/Fallback
-      document.getElementById('exportDailyBtn').onclick     = ()=>downloadCsv(generateDailyCsv(), 'donnees_journalieres.csv');
-      document.getElementById('exportSynthesisBtn').onclick = ()=>downloadCsv(generateSynthesisCsv(), 'syntheses_mensuelle_annuelle.csv');
-      document.getElementById('exportRecapBtn').onclick     = ()=>downloadCsv(generateRecapCsv(), 'recap_ecarts.csv');
-      document.getElementById('exportAlertsBtn').onclick    = ()=>downloadCsv(generateAlertsCsv(), 'recap_alertes.csv');
-      document.getElementById('exportExcelBtn').onclick     = ()=>exportExcelFallback();
+      document.getElementById('exportDailyBtn').onclick = ()=>downloadCsv(generateDailyCsv(),'donnees_journalieres.csv');
+      document.getElementById('exportSynthesisBtn').onclick = ()=>downloadCsv(generateSynthesisCsv(),'syntheses_mensuelle_annuelle.csv');
+      document.getElementById('exportRecapBtn').onclick = ()=>downloadCsv(generateRecapCsv(),'recap_ecarts.csv');
+      document.getElementById('exportAlertsBtn').onclick = ()=>downloadCsv(generateAlertsCsv(),'recap_alertes.csv');
+      document.getElementById('exportExcelBtn').onclick  = ()=>exportExcelFallback();
+      document.getElementById('exportExcelTemplateBtn').onclick = ()=>exportExcelUsingTemplate();
     });
 
     function checkReady(){
       const ready = debitData.length && phData.length;
-      document.getElementById('analyzeBtn').disabled     = !ready;
+      document.getElementById('analyzeBtn').disabled = !ready;
       document.getElementById('applyFilterBtn').disabled = !ready;
       document.getElementById('resetFilterBtn').disabled = !ready;
     }
 
-    // ==================== Uploads des fichiers DATA ====================
+    // ===== Uploads =====
     function setupFileUpload(type, callback){
-      const uploadZone = document.getElementById(`uploadZone${type}`);
-      const fileInput  = document.getElementById(`fileInput${type}`);
-      const fileInfo   = document.getElementById(`fileInfo${type}`);
-      const fileNameEl = document.getElementById(`fileName${type}`);
-      const fileSizeEl = document.getElementById(`fileSize${type}`);
+      const uploadZone=document.getElementById(`uploadZone${type}`);
+      const fileInput=document.getElementById(`fileInput${type}`);
+      const fileInfo=document.getElementById(`fileInfo${type}`);
+      const fileNameEl=document.getElementById(`fileName${type}`);
+      const fileSizeEl=document.getElementById(`fileSize${type}`);
 
-      uploadZone.addEventListener('click', ()=>fileInput.click());
-      uploadZone.addEventListener('dragover', e=>{ e.preventDefault(); uploadZone.classList.add('dragover'); });
-      uploadZone.addEventListener('dragleave', ()=>uploadZone.classList.remove('dragover'));
-      uploadZone.addEventListener('drop', e=>{
+      uploadZone.addEventListener('click',()=>fileInput.click());
+      uploadZone.addEventListener('dragover',e=>{e.preventDefault();uploadZone.classList.add('dragover');});
+      uploadZone.addEventListener('dragleave',()=>uploadZone.classList.remove('dragover'));
+      uploadZone.addEventListener('drop',e=>{
         e.preventDefault(); uploadZone.classList.remove('dragover');
-        if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
       });
-      fileInput.addEventListener('change', e=>{
-        if (e.target.files.length) handleFile(e.target.files[0]);
+      fileInput.addEventListener('change',e=>{
+        if(e.target.files.length) handleFile(e.target.files[0]);
       });
 
       function handleFile(file){
-        fileNameEl.textContent = file.name;
-        fileSizeEl.textContent = `(${(file.size/1024/1024).toFixed(2)} MB)`; 
+        fileNameEl.textContent=file.name;
+        fileSizeEl.textContent=`(${(file.size/1024/1024).toFixed(2)} MB)`;
         fileInfo.classList.remove('hidden');
-
-        const reader = new FileReader();
-        reader.onload = (ev)=>{
+        const reader=new FileReader();
+        reader.onload=(ev)=>{
           try{
             let data;
-            if (file.name.toLowerCase().endsWith('.csv')) {
-              const csv = ev.target.result;
-              const lines = csv.split(/\r?\n/).filter(l=>l.trim().length>0);
-              const sep = detectSep(lines[0]);
-              data = lines.map(line => line.split(sep).map(c=>c.trim()));
+            if (file.name.toLowerCase().endsWith('.csv')){
+              const csv=ev.target.result;
+              const lines=csv.split(/\r?\n/).filter(l=>l.trim().length>0);
+              const sep=detectSep(lines[0]);
+              data=lines.map(line=>line.split(sep).map(c=>c.trim()));
             } else {
-              const wb = XLSX.read(ev.target.result, { type:'array' });
-              const ws = wb.Sheets[wb.SheetNames[0]];
-              data = XLSX.utils.sheet_to_json(ws, { header:1 });
+              const wb=XLSX.read(ev.target.result,{type:'array'});
+              const ws=wb.Sheets[wb.SheetNames[0]];
+              data=XLSX.utils.sheet_to_json(ws,{header:1});
             }
-            const clean = (data||[]).filter(r=>r && r.length>1 && r[0] && r[1]);
+            const clean=(data||[]).filter(r=>r&&r.length>1&&r[0]&&r[1]);
             callback(clean);
-          }catch(err){
-            console.error(err);
-            alert(`Erreur lors du traitement du fichier ${type}`);
-          }
+          }catch(err){ console.error(err); alert(`Erreur lors du traitement du fichier ${type}`); }
         };
-        if (file.name.toLowerCase().endsWith('.csv')) reader.readAsText(file);
-        else reader.readAsArrayBuffer(file);
+        if (file.name.toLowerCase().endsWith('.csv')) reader.readAsText(file); else reader.readAsArrayBuffer(file);
       }
     }
     function detectSep(headerLine){
-      const sc = (headerLine.match(/;/g)||[]).length;
-      const cc = (headerLine.match(/,/g)||[]).length;
-      return sc >= cc ? ';' : ',';
+      const sc=(headerLine.match(/;/g)||[]).length, cc=(headerLine.match(/,/g)||[]).length; return sc>=cc?';':',';
     }
 
-    // ==================== DATES ====================
-    function toInputUTC(ms){
-      const d = new Date(ms);
-      const y = d.getUTCFullYear(), m = String(d.getUTCMonth()+1).padStart(2,'0'), day = String(d.getUTCDate()).padStart(2,'0');
-      return `${y}-${m}-${day}`;
-    }
-    function parseInputDateUTC(s){
-      const m = String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if(!m) return null;
-      return Date.UTC(+m[1], +m[2]-1, +m[3]);
-    }
-    function parseDMYtoUTC(s){
-      const m = String(s||'').match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{2,4})$/);
-      if(!m) return null;
-      let y = +m[3]; if (y < 100) y += 2000;
-      return Date.UTC(y, +m[2]-1, +m[1]);
-    }
-    function parseExcelSerialUTC(s){
-      const txt = String(s||'').trim();
-      if(!/^\d{1,5}(\.\d+)?$/.test(txt)) return null;
-      const serial = Math.floor(+txt);
-      const epoch = Date.UTC(1899,11,30);
-      return epoch + serial*86400000;
-    }
-    function parseAnyToUTC(s){
-      if (s===null || s===undefined || s==='') return null;
-      return parseExcelSerialUTC(s) ?? parseDMYtoUTC(s) ?? parseInputDateUTC(s);
-    }
-    function dmyStrToUTCms(dmy){
-      let t = parseDMYtoUTC(dmy);
-      if (t !== null) return t;
-      return parseAnyToUTC(dmy);
-    }
+    // ===== Dates =====
+    function toInputUTC(ms){ const d=new Date(ms); const y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), day=String(d.getUTCDate()).padStart(2,'0'); return `${y}-${m}-${day}`;}
+    function parseInputDateUTC(s){ const m=String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})$/); if(!m) return null; return Date.UTC(+m[1],+m[2]-1,+m[3]);}
+    function parseDMYtoUTC(s){ const m=String(s||'').match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{2,4})$/); if(!m) return null; let y=+m[3]; if(y<100) y+=2000; return Date.UTC(y,+m[2]-1,+m[1]);}
+    function parseExcelSerialUTC(s){ const txt=String(s||'').trim(); if(!/^\d{1,5}(\.\d+)?$/.test(txt)) return null; const serial=Math.floor(+txt); const epoch=Date.UTC(1899,11,30); return epoch+serial*86400000;}
+    function parseAnyToUTC(s){ if(s===null||s===undefined||s==='') return null; return parseExcelSerialUTC(s)??parseDMYtoUTC(s)??parseInputDateUTC(s);}
+    function dmyStrToUTCms(dmy){ let t=parseDMYtoUTC(dmy); if(t!==null) return t; return parseAnyToUTC(dmy);}
 
-    // ==================== TRAITEMENT JOURNALIER ====================
+    // ===== Traitements =====
     function parseDateLoose(dateStr){
-      const utc = parseAnyToUTC(dateStr);
-      if (utc !== null) return new Date(utc);
-      const parts = String(dateStr).trim().split(' ');
-      const [d,m,y] = parts[0].split('/');
-      let H=0,M=0,S=0;
-      if (parts[1]) [H,M,S] = parts[1].split(':').map(v=>parseInt(v||0,10));
-      return new Date(Number(y), Number(m)-1, Number(d), H||0, M||0, S||0);
+      const utc=parseAnyToUTC(dateStr); if(utc!==null) return new Date(utc);
+      const parts=String(dateStr).trim().split(' '); const [d,m,y]=parts[0].split('/'); let H=0,M=0,S=0; if(parts[1]) [H,M,S]=parts[1].split(':').map(v=>parseInt(v||0,10));
+      return new Date(Number(y),Number(m)-1,Number(d),H||0,M||0,S||0);
     }
-    function formatDate(d){
-      const dd = String(d.getDate()).padStart(2,'0');
-      const mm = String(d.getMonth()+1).padStart(2,'0');
-      return `${dd}/${mm}/${d.getFullYear()}`;
-    }
+    function formatDate(d){ const dd=String(d.getDate()).padStart(2,'0'); const mm=String(d.getMonth()+1).padStart(2,'0'); return `${dd}/${mm}/${d.getFullYear()}`; }
 
     function processDebitData(data){
-      const perDay = {};
-      data.forEach((row,i)=>{
-        if (i===0) return;
-        const dateStr = String(row[0]).trim();
-        const v = parseFloat(String(row[1]).replace(',','.'));
-        if (!dateStr || isNaN(v)) return;
-        const d = parseDateLoose(dateStr);
-        const key = formatDate(d);
-        (perDay[key] = perDay[key] || []).push({time:d, value:v});
+      const perDay={};
+      data.forEach((row,i)=>{ if(i===0) return;
+        const dateStr=String(row[0]).trim(); const v=parseFloat(String(row[1]).replace(',','.')); if(!dateStr||isNaN(v)) return;
+        const d=parseDateLoose(dateStr); const key=formatDate(d); (perDay[key]=perDay[key]||[]).push({time:d,value:v});
       });
-      return Object.keys(perDay)
-        .sort((a,b)=>dmyStrToUTCms(a)-dmyStrToUTCms(b))
-        .map(k=>{
-          const arr = perDay[k].sort((a,b)=>a.time-b.time);
-          const last = arr[arr.length-1].value;
-          return { date:k, value:last, isAlert:last>DEBIT_THRESHOLD, count:arr.length };
-        });
+      return Object.keys(perDay).sort((a,b)=>dmyStrToUTCms(a)-dmyStrToUTCms(b)).map(k=>{
+        const arr=perDay[k].sort((a,b)=>a.time-b.time); const last=arr[arr.length-1].value;
+        return {date:k, value:last, isAlert:last>DEBIT_THRESHOLD, count:arr.length};
+      });
     }
-
-    // pH : ignorer les 0
     function processPhData(data){
-      const perDay = {};
-      data.forEach((row,i)=>{
-        if (i===0) return;
-        const dateStr = String(row[0]).trim();
-        const v = parseFloat(String(row[1]).replace(',','.'));
-        if (!dateStr || isNaN(v)) return;
-        if (v === 0) return;
-        const d = parseDateLoose(dateStr);
-        const key = formatDate(d);
-        (perDay[key] = perDay[key] || []).push(v);
+      const perDay={};
+      data.forEach((row,i)=>{ if(i===0) return;
+        const dateStr=String(row[0]).trim(); const v=parseFloat(String(row[1]).replace(',','.')); if(!dateStr||isNaN(v)) return;
+        if(v===0) return;
+        const d=parseDateLoose(dateStr); const key=formatDate(d); (perDay[key]=perDay[key]||[]).push(v);
       });
-
-      return Object.keys(perDay)
-        .sort((a,b)=>dmyStrToUTCms(a)-dmyStrToUTCms(b))
-        .map(k=>{
-          const arr = (perDay[k] || []).filter(v => v !== 0 && isFinite(v));
-          if (!arr.length) return null;
-          const avg = arr.reduce((a,b)=>a+b,0)/arr.length;
-          return { date:k, value:avg, isAlert:avg<PH_MIN || avg>PH_MAX, count:arr.length };
-        })
-        .filter(Boolean);
+      return Object.keys(perDay).sort((a,b)=>dmyStrToUTCms(a)-dmyStrToUTCms(b)).map(k=>{
+        const arr=(perDay[k]||[]).filter(v=>v!==0&&isFinite(v)); if(!arr.length) return null;
+        const avg=arr.reduce((a,b)=>a+b,0)/arr.length; return {date:k, value:avg, isAlert:avg<PH_MIN||avg>PH_MAX, count:arr.length};
+      }).filter(Boolean);
     }
 
-    // ==================== FILTRAGE & RENDU ====================
     function readRangeFromInputsUTC(){
-      const sEl = document.getElementById('startDate');
-      const eEl = document.getElementById('endDate');
-      const s = (sEl.valueAsDate)
-        ? Date.UTC(sEl.valueAsDate.getFullYear(), sEl.valueAsDate.getMonth(), sEl.valueAsDate.getDate())
-        : parseInputDateUTC(sEl.value);
-      const e = (eEl.valueAsDate)
-        ? Date.UTC(eEl.valueAsDate.getFullYear(), eEl.valueAsDate.getMonth(), eEl.valueAsDate.getDate())
-        : parseInputDateUTC(eEl.value);
-      let a = s, b = e;
-      if (a!=null && b!=null && a>b) { const t=a; a=b; b=t; }
-      startMs = a; endMs = b;
+      const sEl=document.getElementById('startDate'), eEl=document.getElementById('endDate');
+      const s=(sEl.valueAsDate)?Date.UTC(sEl.valueAsDate.getFullYear(),sEl.valueAsDate.getMonth(),sEl.valueAsDate.getDate()):parseInputDateUTC(sEl.value);
+      const e=(eEl.valueAsDate)?Date.UTC(eEl.valueAsDate.getFullYear(),eEl.valueAsDate.getMonth(),eEl.valueAsDate.getDate()):parseInputDateUTC(eEl.value);
+      let a=s,b=e; if(a!=null&&b!=null&&a>b){const t=a;a=b;b=t;} startMs=a; endMs=b;
     }
     function inRange(dateStrDMY){
-      const t = dmyStrToUTCms(dateStrDMY);
-      if (t==null) return false;
-      const endInclusive = (endMs!=null) ? (endMs + 86400000 - 1) : null;
-      if (startMs!=null && t < startMs) return false;
-      if (endInclusive!=null && t > endInclusive) return false;
-      return true;
+      const t=dmyStrToUTCms(dateStrDMY); if(t==null) return false;
+      const endInclusive=(endMs!=null)?(endMs+86400000-1):null;
+      if(startMs!=null&&t<startMs) return false; if(endInclusive!=null&&t>endInclusive) return false; return true;
     }
-    function getAllDatesUTC(src){
-      const set = new Set([...src.daily.debit.map(d=>d.date), ...src.daily.ph.map(d=>d.date)]);
-      return Array.from(set).map(s=>dmyStrToUTCms(s)).filter(Boolean).sort((a,b)=>a-b);
-    }
+    function getAllDatesUTC(src){ const set=new Set([...src.daily.debit.map(d=>d.date),...src.daily.ph.map(d=>d.date)]); return Array.from(set).map(s=>dmyStrToUTCms(s)).filter(Boolean).sort((a,b)=>a-b); }
 
     function applyFilter(){
-      if (!processedData.daily.debit.length && !processedData.daily.ph.length) return;
-
+      if(!processedData.daily.debit.length&&!processedData.daily.ph.length) return;
       readRangeFromInputsUTC();
-
       filteredData.daily.debit = processedData.daily.debit.filter(d=>inRange(d.date));
-      filteredData.daily.ph    = processedData.daily.ph   .filter(d=>inRange(d.date));
-
+      filteredData.daily.ph    = processedData.daily.ph.filter(d=>inRange(d.date));
       rebuildAllViews();
-
-      const activeRange = document.getElementById('activeRange');
-      if (startMs!=null && endMs!=null){
-        activeRange.querySelector('span').textContent = `${toInputUTC(startMs)} → ${toInputUTC(endMs)}`;
-        activeRange.classList.remove('hidden');
-      } else {
-        activeRange.classList.add('hidden');
-      }
+      const ar=document.getElementById('activeRange');
+      if(startMs!=null&&endMs!=null){ ar.querySelector('span').textContent=`${toInputUTC(startMs)} → ${toInputUTC(endMs)}`; ar.classList.remove('hidden'); }
+      else ar.classList.add('hidden');
     }
-
-    function resetFilter(){
-      const all = getAllDatesUTC(processedData);
-      if (all.length){
-        startMs = all[0]; endMs = all[all.length-1];
-        document.getElementById('startDate').value = toInputUTC(startMs);
-        document.getElementById('endDate').value   = toInputUTC(endMs);
-      }
-      applyFilter();
-    }
-
-    function rebuildAllViews(){
-      generateSyntheses(filteredData.daily);
-      generateAlerts(filteredData.daily);
-      renderDaily();
-      renderSyntheses();
-      renderAlerts();
-      updateTemplateButtonState();
-    }
+    function resetFilter(){ const all=getAllDatesUTC(processedData); if(all.length){ startMs=all[0]; endMs=all[all.length-1]; document.getElementById('startDate').value=toInputUTC(startMs); document.getElementById('endDate').value=toInputUTC(endMs);} applyFilter(); }
+    function rebuildAllViews(){ generateSyntheses(filteredData.daily); generateAlerts(filteredData.daily); renderDaily(); renderSyntheses(); renderAlerts(); updateTemplateButtonState(); }
 
     function renderDaily(){
-      const fmt = (n)=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2, maximumFractionDigits:2});
-      const dRows = filteredData.daily.debit
-        .sort((a,b)=>dmyStrToUTCms(a.date)-dmyStrToUTCms(b.date))
-        .map(d=>`
-          <tr class="${d.isAlert?'alert-row':''}">
-            <td class="px-4 py-2 text-sm">${d.date}</td>
-            <td class="px-4 py-2 text-sm font-medium">${fmt(d.value)}</td>
-            <td class="px-4 py-2 text-sm">${d.isAlert?'<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">⚠️ Alerte</span>':'<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">✅ OK</span>'}</td>
-          </tr>`).join('');
-      document.getElementById('debitTable').innerHTML = dRows || '<tr><td class="px-4 py-2 text-sm" colspan="3">Aucune donnée.</td></tr>';
+      const fmt=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
+      const dRows=filteredData.daily.debit.sort((a,b)=>dmyStrToUTCms(a.date)-dmyStrToUTCms(b.date)).map(d=>`
+        <tr class="${d.isAlert?'alert-row':''}">
+          <td class="px-4 py-2 text-sm">${d.date}</td>
+          <td class="px-4 py-2 text-sm font-medium">${fmt(d.value)}</td>
+          <td class="px-4 py-2 text-sm">${d.isAlert?'<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">⚠️ Alerte</span>':'<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">✅ OK</span>'}</td>
+        </tr>`).join('');
+      document.getElementById('debitTable').innerHTML=dRows||'<tr><td class="px-4 py-2 text-sm" colspan="3">Aucune donnée.</td></tr>';
 
-      const pRows = filteredData.daily.ph
-        .sort((a,b)=>dmyStrToUTCms(a.date)-dmyStrToUTCms(b.date))
-        .map(d=>`
-          <tr class="${d.isAlert?'alert-row':''}">
-            <td class="px-4 py-2 text-sm">${d.date}</td>
-            <td class="px-4 py-2 text-sm font-medium">${fmt(d.value)}</td>
-            <td class="px-4 py-2 text-sm">${d.isAlert?'<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">⚠️ Alerte</span>':'<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">✅ OK</span>'}</td>
-          </tr>`).join('');
-      document.getElementById('phTable').innerHTML = pRows || '<tr><td class="px-4 py-2 text-sm" colspan="3">Aucune donnée.</td></tr>';
+      const pRows=filteredData.daily.ph.sort((a,b)=>dmyStrToUTCms(a.date)-dmyStrToUTCms(b.date)).map(d=>`
+        <tr class="${d.isAlert?'alert-row':''}">
+          <td class="px-4 py-2 text-sm">${d.date}</td>
+          <td class="px-4 py-2 text-sm font-medium">${fmt(d.value)}</td>
+          <td class="px-4 py-2 text-sm">${d.isAlert?'<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">⚠️ Alerte</span>':'<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">✅ OK</span>'}</td>
+        </tr>`).join('');
+      document.getElementById('phTable').innerHTML=pRows||'<tr><td class="px-4 py-2 text-sm" colspan="3">Aucune donnée.</td></tr>';
     }
 
     function generateSyntheses(fromDaily){
-      const mapDebit = new Map(fromDaily.debit.map(d=>[d.date,d]));
-      const mapPh    = new Map(fromDaily.ph.map(d=>[d.date,d]));
-      const allDates = new Set([...mapDebit.keys(), ...mapPh.keys()]);
-      const sorted = Array.from(allDates).sort((a,b)=>dmyStrToUTCms(a)-dmyStrToUTCms(b));
-
-      const mMap = new Map(); // YYYY-MM
-      const yMap = new Map(); // YYYY
-
-      function monthLabel(date){
-        const M = ['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
-        return `${M[date.getMonth()]}-${String(date.getFullYear()).slice(-2)}`;
+      const mapD=new Map(fromDaily.debit.map(d=>[d.date,d])), mapP=new Map(fromDaily.ph.map(d=>[d.date,d]));
+      const allDates=new Set([...mapD.keys(),...mapP.keys()]);
+      const sorted=Array.from(allDates).sort((a,b)=>dmyStrToUTCms(a)-dmyStrToUTCms(b));
+      const mMap=new Map(), yMap=new Map();
+      function monthLabel(date){ const M=['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc']; return `${M[date.getMonth()]}-${String(date.getFullYear()).slice(-2)}`; }
+      for(const ds of sorted){
+        const t=dmyStrToUTCms(ds), dObj=new Date(t); const deb=mapD.get(ds), ph=mapP.get(ds);
+        const mKey=`${dObj.getUTCFullYear()}-${String(dObj.getUTCMonth()+1).padStart(2,'0')}`;
+        if(!mMap.has(mKey)) mMap.set(mKey,{start:new Date(Date.UTC(dObj.getUTCFullYear(),dObj.getUTCMonth(),1)),label:monthLabel(new Date(dObj.getUTCFullYear(),dObj.getUTCMonth(),1)),d:[],p:[],ad:0,ap:0});
+        const m=mMap.get(mKey); if(deb){m.d.push(deb.value); if(deb.isAlert) m.ad++;} if(ph){m.p.push(ph.value); if(ph.isAlert) m.ap++;}
+        const yKey=String(dObj.getUTCFullYear());
+        if(!yMap.has(yKey)) yMap.set(yKey,{start:new Date(Date.UTC(dObj.getUTCFullYear(),0,1)),label:yKey,d:[],p:[],ad:0,ap:0});
+        const y=yMap.get(yKey); if(deb){y.d.push(deb.value); if(deb.isAlert) y.ad++;} if(ph){y.p.push(ph.value); if(ph.isAlert) y.ap++;}
       }
-
-      for (const ds of sorted){
-        const dUTC = dmyStrToUTCms(ds);
-        const dObj = new Date(dUTC);
-        const deb = mapDebit.get(ds);
-        const ph  = mapPh.get(ds);
-
-        const mKey = `${dObj.getUTCFullYear()}-${String(dObj.getUTCMonth()+1).padStart(2,'0')}`;
-        if (!mMap.has(mKey)) mMap.set(mKey, {start:new Date(Date.UTC(dObj.getUTCFullYear(), dObj.getUTCMonth(),1)), label:monthLabel(new Date(dObj.getUTCFullYear(), dObj.getUTCMonth(),1)), d:[], p:[], ad:0, ap:0});
-        const m = mMap.get(mKey);
-        if (deb){ m.d.push(deb.value); if (deb.isAlert) m.ad++; }
-        if (ph ){ m.p.push(ph.value);  if (ph.isAlert)  m.ap++; }
-
-        const yKey = String(dObj.getUTCFullYear());
-        if (!yMap.has(yKey)) yMap.set(yKey, {start:new Date(Date.UTC(dObj.getUTCFullYear(),0,1)), label:yKey, d:[], p:[], ad:0, ap:0});
-        const y = yMap.get(yKey);
-        if (deb){ y.d.push(deb.value); if (deb.isAlert) y.ad++; }
-        if (ph ){ y.p.push(ph.value);  if (ph.isAlert)  y.ap++; }
-      }
-
-      filteredData.monthly = Array.from(mMap.values()).sort((a,b)=>a.start-b.start)
-        .map(g=>({period:g.label, start:g.start, debitAvg:avg(g.d), phAvg:avg(g.p), debitAlerts:g.ad, phAlerts:g.ap}));
-      filteredData.yearly = Array.from(yMap.values()).sort((a,b)=>a.start-b.start)
-        .map(g=>({period:g.label, start:g.start, debitAvg:avg(g.d), phAvg:avg(g.p), debitAlerts:g.ad, phAlerts:g.ap}));
-
-      function avg(arr){ return arr.length ? (arr.reduce((a,b)=>a+b,0)/arr.length) : 0; }
-    }
-
-    function renderSyntheses(){
-      const fmt = (n)=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2, maximumFractionDigits:2});
-      document.getElementById('monthlyTable').innerHTML = filteredData.monthly.map(m=>
-        `<tr><td class="px-4 py-2 text-sm font-medium">${m.period}</td><td class="px-4 py-2 text-sm">${fmt(m.debitAvg)}</td><td class="px-4 py-2 text-sm">${fmt(m.phAvg)}</td><td class="px-4 py-2 text-sm">${m.debitAlerts}</td><td class="px-4 py-2 text-sm">${m.phAlerts}</td></tr>`
-      ).join('');
-      document.getElementById('yearlyTable').innerHTML = filteredData.yearly.map(y=>
-        `<tr><td class="px-4 py-2 text-sm font-medium">${y.period}</td><td class="px-4 py-2 text-sm">${fmt(y.debitAvg)}</td><td class="px-4 py-2 text-sm">${fmt(y.phAvg)}</td><td class="px-4 py-2 text-sm">${y.debitAlerts}</td><td class="px-4 py-2 text-sm">${y.phAlerts}</td></tr>`
-      ).join('');
+      filteredData.monthly=Array.from(mMap.values()).sort((a,b)=>a.start-b.start).map(g=>({period:g.label,start:g.start,debitAvg:avg(g.d),phAvg:avg(g.p),debitAlerts:g.ad,phAlerts:g.ap}));
+      filteredData.yearly =Array.from(yMap.values()).sort((a,b)=>a.start-b.start).map(g=>({period:g.label,start:g.start,debitAvg:avg(g.d),phAvg:avg(g.p),debitAlerts:g.ad,phAlerts:g.ap}));
+      function avg(arr){ return arr.length?(arr.reduce((a,b)=>a+b,0)/arr.length):0; }
     }
 
     function generateAlerts(fromDaily){
-      const alerts = [];
-      fromDaily.debit.forEach(d=>{
-        if (d.isAlert) alerts.push({date:d.date, type:'Débit', value:d.value, threshold:`> ${DEBIT_THRESHOLD}`, deviation:(d.value-DEBIT_THRESHOLD), severity:'high'});
-      });
-      fromDaily.ph.forEach(p=>{
-        if (p.isAlert){
-          const dev = p.value < PH_MIN ? (p.value-PH_MIN) : (p.value-PH_MAX);
-          alerts.push({date:p.date, type:'pH', value:p.value, threshold:`${PH_MIN} - ${PH_MAX}`, deviation:dev, severity:'medium'});
-        }
-      });
-      alerts.sort((a,b)=>dmyStrToUTCms(b.date) - dmyStrToUTCms(a.date));
-      filteredData.alerts = alerts;
+      const alerts=[];
+      fromDaily.debit.forEach(d=>{ if(d.isAlert) alerts.push({date:d.date,type:'Débit',value:d.value,threshold:`> ${DEBIT_THRESHOLD}`,deviation:(d.value-DEBIT_THRESHOLD),severity:'high'}); });
+      fromDaily.ph.forEach(p=>{ if(p.isAlert){ const dev=p.value<PH_MIN?(p.value-PH_MIN):(p.value-PH_MAX); alerts.push({date:p.date,type:'pH',value:p.value,threshold:`${PH_MIN} - ${PH_MAX}`,deviation:dev,severity:'medium'}); } });
+      alerts.sort((a,b)=>dmyStrToUTCms(b.date)-dmyStrToUTCms(a.date)); filteredData.alerts=alerts;
+    }
+
+    function renderSyntheses(){
+      const fmt=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
+      document.getElementById('monthlyTable').innerHTML = filteredData.monthly.map(m=>`<tr>
+        <td class="px-4 py-2 text-sm font-medium">${m.period}</td>
+        <td class="px-4 py-2 text-sm">${fmt(m.debitAvg)}</td>
+        <td class="px-4 py-2 text-sm">${fmt(m.phAvg)}</td>
+        <td class="px-4 py-2 text-sm">${m.debitAlerts}</td>
+        <td class="px-4 py-2 text-sm">${m.phAlerts}</td>
+      </tr>`).join('');
+      document.getElementById('yearlyTable').innerHTML = filteredData.yearly.map(y=>`<tr>
+        <td class="px-4 py-2 text-sm font-medium">${y.period}</td>
+        <td class="px-4 py-2 text-sm">${fmt(y.debitAvg)}</td>
+        <td class="px-4 py-2 text-sm">${fmt(y.phAvg)}</td>
+        <td class="px-4 py-2 text-sm">${y.debitAlerts}</td>
+        <td class="px-4 py-2 text-sm">${y.phAlerts}</td>
+      </tr>`).join('');
     }
 
     function renderAlerts(){
-      const fmt = (n)=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2, maximumFractionDigits:2});
-      const rows = filteredData.alerts.map(a=>
-        `<tr class="${a.severity==='high'?'alert-row':'warning-row'}">
+      const fmt=n=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});
+      const rows=filteredData.alerts.map(a=>`
+        <tr class="${a.severity==='high'?'alert-row':'warning-row'}">
           <td class="px-4 py-2 text-sm">${a.date}</td>
           <td class="px-4 py-2 text-sm font-medium">${a.type}</td>
           <td class="px-4 py-2 text-sm">${fmt(a.value)}</td>
           <td class="px-4 py-2 text-sm">${a.threshold}</td>
           <td class="px-4 py-2 text-sm font-medium">${fmt(a.deviation)}</td>
-        </tr>`
-      ).join('');
-      document.getElementById('alertsTable').innerHTML = rows;
-
-      document.getElementById('alertsDebitCount').textContent = filteredData.alerts.filter(a=>a.type==='Débit').length;
-      document.getElementById('alertsPhCount').textContent   = filteredData.alerts.filter(a=>a.type==='pH').length;
-      document.getElementById('totalAlertsCount').textContent = filteredData.alerts.length;
-
-      const worst = filteredData.alerts.reduce((m,a)=>Math.max(m, Math.abs(Number(a.deviation))), 0);
-      document.getElementById('worstDeviation').textContent = worst ? fmt(worst) : '—';
+        </tr>`).join('');
+      document.getElementById('alertsTable').innerHTML=rows;
+      document.getElementById('alertsDebitCount').textContent=filteredData.alerts.filter(a=>a.type==='Débit').length;
+      document.getElementById('alertsPhCount').textContent=filteredData.alerts.filter(a=>a.type==='pH').length;
+      document.getElementById('totalAlertsCount').textContent=filteredData.alerts.length;
+      const worst=filteredData.alerts.reduce((m,a)=>Math.max(m,Math.abs(Number(a.deviation))),0);
+      document.getElementById('worstDeviation').textContent=worst?fmt(worst):'—';
     }
 
-    // ==================== EXPORTS CSV ====================
-    function csvHeaderInfo(){
-      const now = new Date();
-      const range = `${startMs!=null?toInputUTC(startMs):'N/A'} -> ${endMs!=null?toInputUTC(endMs):'N/A'}`;
-      return [
-        '# Export ; Analyseur Débit & pH',
-        `# Généré le ; ${now.toLocaleString('fr-FR')}`,
-        `# Période filtrée ; ${range}`,
-        '# ---'
-      ].join('\r\n');
-    }
-    function q(value){ return `"${String(value).replace(/"/g,'""')}"`; }
-    function numFR(n){ return Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2, maximumFractionDigits:2}); }
+    // ===== CSV =====
+    function csvHeaderInfo(){ const now=new Date(); const range=`${startMs!=null?toInputUTC(startMs):'N/A'} -> ${endMs!=null?toInputUTC(endMs):'N/A'}`;
+      return ['# Export ; Analyseur Débit & pH', `# Généré le ; ${now.toLocaleString('fr-FR')}`, `# Période filtrée ; ${range}`, '# ---'].join('\r\n'); }
+    function q(v){ return `"${String(v).replace(/"/g,'""')}"`; }
+    function numFR(n){ return Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
     function generateDailyCsv(){
-      const sep=';', NL='\r\n';
-      let out = csvHeaderInfo()+NL;
-      out += ['Date','Débit (dernière valeur)','Statut Débit','CouleurSouhaitée Débit','pH (moyenne)','Statut pH','CouleurSouhaitée pH'].map(q).join(sep)+NL;
-
-      const mapD = new Map(filteredData.daily.debit.map(d=>[d.date,d]));
-      const mapP = new Map(filteredData.daily.ph.map(d=>[d.date,d]));
-      const all = new Set([...mapD.keys(), ...mapP.keys()]);
-      const sorted = Array.from(all).sort((a,b)=>dmyStrToUTCms(a)-dmyStrToUTCms(b));
-
-      for (const ds of sorted){
-        const d = mapD.get(ds);
-        const p = mapP.get(ds);
-        out += [
-          q(ds),
-          q(d?numFR(d.value):'N/A'),
-          q(d?(d.isAlert?'ALERTE':'OK'):'N/A'),
-          q(d?(d.isAlert?'ROUGE':'VERT'):'N/A'),
-          q(p?numFR(p.value):'N/A'),
-          q(p?(p.isAlert?'ALERTE':'OK'):'N/A'),
-          q(p?(p.isAlert?'ROUGE':'VERT'):'N/A')
-        ].join(sep)+NL;
+      const sep=';',NL='\r\n'; let out=csvHeaderInfo()+NL;
+      out+=['Date','Débit (dernière valeur)','Statut Débit','CouleurSouhaitée Débit','pH (moyenne)','Statut pH','CouleurSouhaitée pH'].map(q).join(sep)+NL;
+      const mapD=new Map(filteredData.daily.debit.map(d=>[d.date,d])), mapP=new Map(filteredData.daily.ph.map(d=>[d.date,d]));
+      const all=new Set([...mapD.keys(),...mapP.keys()]); const sorted=Array.from(all).sort((a,b)=>dmyStrToUTCms(a)-dmyStrToUTCms(b));
+      for(const ds of sorted){
+        const d=mapD.get(ds), p=mapP.get(ds);
+        out+=[q(ds), q(d?numFR(d.value):'N/A'), q(d?(d.isAlert?'ALERTE':'OK'):'N/A'), q(d?(d.isAlert?'ROUGE':'VERT'):'N/A'),
+              q(p?numFR(p.value):'N/A'), q(p?(p.isAlert?'ALERTE':'OK'):'N/A'), q(p?(p.isAlert?'ROUGE':'VERT'):'N/A')].join(sep)+NL;
       }
       return out;
     }
-
     function generateSynthesisCsv(){
-      const sep=';', NL='\r\n';
-      let out = csvHeaderInfo()+NL;
-      out += ['Type','Période','Débit Moyen','pH Moyen','Alertes Débit','Alertes pH'].map(q).join(sep)+NL;
-
-      filteredData.monthly.forEach(m=>{
-        out += [q('Mois'), q(m.period), q(numFR(m.debitAvg)), q(numFR(m.phAvg)), q(m.debitAlerts), q(m.phAlerts)].join(sep)+NL;
-      });
-      filteredData.yearly.forEach(y=>{
-        out += [q('Année'), q(y.period), q(numFR(y.debitAvg)), q(numFR(y.phAvg)), q(y.debitAlerts), q(y.phAlerts)].join(sep)+NL;
-      });
+      const sep=';',NL='\r\n'; let out=csvHeaderInfo()+NL;
+      out+=['Type','Période','Débit Moyen','pH Moyen','Alertes Débit','Alertes pH'].map(q).join(sep)+NL;
+      filteredData.monthly.forEach(m=>{ out+=[q('Mois'),q(m.period),q(numFR(m.debitAvg)),q(numFR(m.phAvg)),q(m.debitAlerts),q(m.phAlerts)].join(sep)+NL; });
+      filteredData.yearly.forEach(y=>{ out+=[q('Année'),q(y.period),q(numFR(y.debitAvg)),q(numFR(y.phAvg)),q(y.debitAlerts),q(y.phAlerts)].join(sep)+NL; });
       return out;
     }
-
     function buildMonthlyRecap(fromDaily){
-      const buckets = new Map();
-      const all = new Set([...fromDaily.debit.map(x=>x.date), ...fromDaily.ph.map(x=>x.date)]);
+      const buckets=new Map(); const all=new Set([...fromDaily.debit.map(x=>x.date), ...fromDaily.ph.map(x=>x.date)]);
       Array.from(all).sort((a,b)=>dmyStrToUTCms(a)-dmyStrToUTCms(b)).forEach(ds=>{
-        const t = dmyStrToUTCms(ds);
-        const dObj = new Date(t);
-        const key = `${dObj.getUTCFullYear()}-${String(dObj.getUTCMonth()+1).padStart(2,'0')}`;
-        if (!buckets.has(key)) buckets.set(key, {label:(['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'][dObj.getUTCMonth()])+'-'+String(dObj.getUTCFullYear()).slice(-2), debit_lt2x:0, debit_gt2x:0, ph_lt2x:0, ph_gt2x:0});
-        const b = buckets.get(key);
-        const deb = fromDaily.debit.find(x=>x.date===ds);
-        const ph  = fromDaily.ph.find(x=>x.date===ds);
-
-        if (deb && deb.value>DEBIT_THRESHOLD){
-          if (deb.value > 2*DEBIT_THRESHOLD) b.debit_gt2x++; else b.debit_lt2x++;
-        }
-        if (ph && (ph.value<PH_MIN || ph.value>PH_MAX)){
-          const gt2 = (ph.value<PH_MIN && ph.value < 2*PH_MIN) || (ph.value>PH_MAX && ph.value > 2*PH_MAX);
-          if (gt2) b.ph_gt2x++; else b.ph_lt2x++;
-        }
+        const t=dmyStrToUTCms(ds), dObj=new Date(t);
+        const key=`${dObj.getUTCFullYear()}-${String(dObj.getUTCMonth()+1).padStart(2,'0')}`;
+        if(!buckets.has(key)) buckets.set(key,{label:(['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'][dObj.getUTCMonth()])+'-'+String(dObj.getUTCFullYear()).slice(-2),debit_lt2x:0,debit_gt2x:0,ph_lt2x:0,ph_gt2x:0});
+        const b=buckets.get(key); const deb=fromDaily.debit.find(x=>x.date===ds); const ph=fromDaily.ph.find(x=>x.date===ds);
+        if(deb&&deb.value>DEBIT_THRESHOLD){ if(deb.value>2*DEBIT_THRESHOLD) b.debit_gt2x++; else b.debit_lt2x++; }
+        if(ph&&(ph.value<PH_MIN||ph.value>PH_MAX)){ const gt2=(ph.value<PH_MIN&&ph.value<2*PH_MIN)||(ph.value>PH_MAX&&ph.value>2*PH_MAX); if(gt2) b.ph_gt2x++; else b.ph_lt2x++; }
       });
       return Array.from(buckets.values());
     }
-
     function generateRecapCsv(){
-      const sep=';', NL='\r\n';
-      let out = csvHeaderInfo()+NL;
-      out += ['Mois','Nb dép. < 2×seuil - Débit','Nb dép. < 2×seuil - pH','Commentaires Débit','Commentaires pH','Nb dép. > 2×seuil - Débit','Nb dép. > 2×seuil - pH'].map(q).join(sep)+NL;
-      const recap = buildMonthlyRecap(filteredData.daily);
-      recap.forEach(r=>{
-        out += [q(r.label), q(r.debit_lt2x), q(r.ph_lt2x), q('/'), q('/'), q(r.debit_gt2x), q(r.ph_gt2x)].join(sep)+NL;
-      });
+      const sep=';',NL='\r\n'; let out=csvHeaderInfo()+NL;
+      out+=['Mois','Nb dép. < 2×seuil - Débit','Nb dép. < 2×seuil - pH','Commentaires Débit','Commentaires pH','Nb dép. > 2×seuil - Débit','Nb dép. > 2×seuil - pH'].map(q).join(sep)+NL;
+      const recap=buildMonthlyRecap(filteredData.daily);
+      recap.forEach(r=>{ out+=[q(r.label),q(r.debit_lt2x),q(r.ph_lt2x),q('/'),q('/'),q(r.debit_gt2x),q(r.ph_gt2x)].join(sep)+NL; });
       return out;
     }
+    function downloadCsv(csvContent,fileName){ const BOM='\uFEFF'; const blob=new Blob([BOM+csvContent.replace(/\r?\n/g,'\r\n')],{type:'text/csv;charset=utf-8;'}); saveAs(blob,fileName); }
 
-    function generateAlertsCsv(){
-      const sep=';', NL='\r\n';
-      let out = csvHeaderInfo()+NL;
-      out += ['Date','Type','Valeur','Seuil','Écart'].map(q).join(sep)+NL;
-      filteredData.alerts.forEach(a=>{
-        out += [q(a.date), q(a.type), q(numFR(a.value)), q(a.threshold), q(numFR(a.deviation))].join(sep)+NL;
-      });
-      return out;
-    }
+    // ===== Excel (modèle + fallback) =====
+    const BANDS=[{start:14,end:44},{start:50,end:80},{start:86,end:116},{start:122,end:152}];
+    const BLOCKS=[{mois:'A',jour:'B',deb:'C',ph:'D'},{mois:'F',jour:'G',deb:'H',ph:'I'},{mois:'K',jour:'L',deb:'M',ph:'N'}];
+    function getMonthIndexFromUTC(ms){ return new Date(ms).getUTCMonth(); }
 
-    function downloadCsv(csvContent, fileName){
-      const BOM = '\uFEFF';
-      const blob = new Blob([BOM + csvContent.replace(/\r?\n/g,'\r\n')], { type:'text/csv;charset=utf-8;' });
-      saveAs(blob, fileName);
-    }
-
-    // ==================== EXCEL (MODÈLE + FALLBACK) ====================
-    const BANDS = [
-      { start:14, end:44 },
-      { start:50, end:80 },
-      { start:86, end:116 },
-      { start:122, end:152 }
-    ];
-    const BLOCKS = [
-      { mois: 'A', jour:'B', deb:'C', ph:'D' },
-      { mois: 'F', jour:'G', deb:'H', ph:'I' },
-      { mois: 'K', jour:'L', deb:'M', ph:'N' }
-    ];
-
-    function getMonthIndexFromUTC(ms){
-      return new Date(ms).getUTCMonth(); // 0..11
-    }
-
-    function computeMonthlyExceedCounts(fromDaily, thresholds){
-      const { DEBIT_THRESHOLD, PH_MIN, PH_MAX } = thresholds;
-      const months = Array.from({length:12}, ()=>({debit:0, ph:0, debit2x:0, ph2x:0}));
-      const toMonth = (dmy)=> new Date(dmy.split('/').reverse().join('-')+'T00:00:00Z').getUTCMonth();
-
-      fromDaily.debit.forEach(d=>{
-        const m = toMonth(d.date);
-        if (d.value > DEBIT_THRESHOLD){
-          months[m].debit++;
-          if (d.value > 2*DEBIT_THRESHOLD) months[m].debit2x++;
-        }
-      });
-
-      fromDaily.ph.forEach(p=>{
-        const m = toMonth(p.date);
-        if (p.value < PH_MIN || p.value > PH_MAX){
-          months[m].ph++;
-          if ((p.value < PH_MIN && p.value < 2*PH_MIN) || (p.value > PH_MAX && p.value > 2*PH_MAX)){
-            months[m].ph2x++;
-          }
-        }
-      });
-
+    function computeMonthlyExceedCounts(fromDaily,{DEBIT_THRESHOLD,PH_MIN,PH_MAX}){
+      const months=Array.from({length:12},()=>({debit:0,ph:0,debit2x:0,ph2x:0}));
+      const toMonth=dmy=>new Date(dmy.split('/').reverse().join('-')+'T00:00:00Z').getUTCMonth();
+      fromDaily.debit.forEach(d=>{ const m=toMonth(d.date); if(d.value>DEBIT_THRESHOLD){ months[m].debit++; if(d.value>2*DEBIT_THRESHOLD) months[m].debit2x++; }});
+      fromDaily.ph.forEach(p=>{ const m=toMonth(p.date); if(p.value<PH_MIN||p.value>PH_MAX){ months[m].ph++; if((p.value<PH_MIN&&p.value<2*PH_MIN)||(p.value>PH_MAX&&p.value>2*PH_MAX)) months[m].ph2x++; }});
       return months;
     }
-
-    async function fillTemplateSummaryP8V22(ws, monthlyCounts){
-      const mapMonthRows = new Array(12).fill(null).map(()=>({rowDebit:null,rowPh:null}));
-
-      for (let r=8; r<=22; r++){
-        const cellP = ws.getCell(`P${r}`);
-        const val = (cellP.value && cellP.value.richText)
-          ? cellP.value.richText.map(t=>t.text).join('')
-          : (cellP.value && cellP.value.text ? cellP.value.text : cellP.value);
-        const label = String(val||'').trim().toUpperCase();
-        const mi = MONTHS_FR.findIndex(m => label.includes(m));
-        if (mi >= 0){
-          const rowDebit = r;
-          const rowPh    = r+1 <= 22 ? r+1 : r;
-          mapMonthRows[mi] = {rowDebit, rowPh};
-        }
+    async function fillTemplateSummaryP8V22(ws,monthlyCounts){
+      const mapMonthRows=new Array(12).fill(null).map(()=>({rowDebit:null,rowPh:null}));
+      for(let r=8;r<=22;r++){
+        const cellP=ws.getCell(`P${r}`); const val=(cellP.value&&cellP.value.richText)?cellP.value.richText.map(t=>t.text).join(''):(cellP.value&&cellP.value.text?cellP.value.text:cellP.value);
+        const label=String(val||'').trim().toUpperCase(); const mi=MONTHS_FR.findIndex(m=>label.includes(m)); if(mi>=0){ const rowDebit=r; const rowPh=r+1<=22?r+1:r; mapMonthRows[mi]={rowDebit,rowPh}; }
       }
-
-      for (let mi=0; mi<12; mi++){
-        const rows = mapMonthRows[mi];
-        if (!rows.rowDebit || !rows.rowPh) continue;
-        const {debit, ph, debit2x, ph2x} = monthlyCounts[mi];
-
-        ws.getCell(`R${rows.rowDebit}`).value = debit;
-        ws.getCell(`R${rows.rowPh}`).value    = ph;
-        ws.getCell(`U${rows.rowPh}`).value    = debit2x;
-        ws.getCell(`V${rows.rowPh}`).value    = ph2x;
+      for(let mi=0;mi<12;mi++){
+        const rows=mapMonthRows[mi]; if(!rows.rowDebit||!rows.rowPh) continue;
+        const {debit,ph,debit2x,ph2x}=monthlyCounts[mi];
+        ws.getCell(`R${rows.rowDebit}`).value=debit;
+        ws.getCell(`R${rows.rowPh}`).value=ph;
+        ws.getCell(`U${rows.rowPh}`).value=debit2x;
+        ws.getCell(`V${rows.rowPh}`).value=ph2x;
       }
     }
 
     async function exportExcelUsingTemplate(){
-      if (!filteredData.daily.debit.length && !filteredData.daily.ph.length){
-        alert('Aucune donnée filtrée à exporter.');
-        return;
-      }
-      if (!templateLoaded || !templateArrayBuffer){
-        alert('Le modèle par défaut (Modele.xlsx) n’est pas chargé. Utilisez l’export "Excel formaté (fallback)" ou servez la page via http.');
-        return;
-      }
+      if(!filteredData.daily.debit.length&&!filteredData.daily.ph.length){ alert('Aucune donnée filtrée à exporter.'); return; }
+      if(!templateLoaded||!templateArrayBuffer){ alert('Le modèle par défaut (Modele.xlsx) n’est pas chargé.'); return; }
 
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(templateArrayBuffer);
+      const workbook=new ExcelJS.Workbook(); await workbook.xlsx.load(templateArrayBuffer);
+      const sheetNameCandidates=['suivi des débits et du pH','suivi des débits et du pH (2)'];
+      let ws=null; for(const name of sheetNameCandidates){ const tmp=workbook.getWorksheet(name); if(tmp){ ws=tmp; break; } } if(!ws) ws=workbook.worksheets[0];
 
-      // Feuille cible
-      const sheetNameCandidates = ['suivi des débits et du pH','suivi des débits et du pH (2)'];
-      let ws = null;
-      for (const name of sheetNameCandidates){
-        const tmp = workbook.getWorksheet(name);
-        if (tmp) { ws = tmp; break; }
-      }
-      if (!ws) ws = workbook.worksheets[0];
+      // Nettoyage zones
+      for(const band of BANDS){ for(const block of BLOCKS){ for(let r=band.start;r<=band.end;r++){ ws.getCell(`${block.jour}${r}`).value=null; ws.getCell(`${block.deb}${r}`).value=null; ws.getCell(`${block.ph}${r}`).value=null; } } }
 
-      // Nettoyage des zones (on garde les styles)
-      for (const band of BANDS){
-        for (const block of BLOCKS){
-          for (let r = band.start; r <= band.end; r++){
-            ws.getCell(`${block.jour}${r}`).value = null;
-            ws.getCell(`${block.deb}${r}`).value  = null;
-            ws.getCell(`${block.ph}${r}`).value   = null;
-          }
-        }
-      }
+      // Prépare couleurs & format (>>> CORRECTION ici <<<)
+      const numFmt='0.00';
+      const redFill  = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFF8D7DA' } }; // rouge doux
+      const greenFill= { type:'pattern', pattern:'solid', fgColor:{ argb:'FFC6EFCE' } }; // vert conforme
 
-      // Données filtrées
-      const dateSet = new Set([...filteredData.daily.debit.map(d=>d.date), ...filteredData.daily.ph.map(d=>d.date)]);
-      const sorted = Array.from(dateSet).map(d=>({dStr:d, t:dmyStrToUTCms(d)}))
-                           .filter(o=>o.t!=null)
-                           .sort((a,b)=>a.t-b.t);
-      const mapD = new Map(filteredData.daily.debit.map(d=>[d.date,d]));
-      const mapP = new Map(filteredData.daily.ph.map(d=>[d.date,d]));
+      const dateSet=new Set([...filteredData.daily.debit.map(d=>d.date),...filteredData.daily.ph.map(d=>d.date)]);
+      const sorted=Array.from(dateSet).map(d=>({dStr:d,t:dmyStrToUTCms(d)})).filter(o=>o.t!=null).sort((a,b)=>a.t-b.t);
+      const mapD=new Map(filteredData.daily.debit.map(d=>[d.date,d]));
+      const mapP=new Map(filteredData.daily.ph.map(d=>[d.date,d]));
 
-      const byMonth = new Map();
-      for (const o of sorted){
-        const mi = getMonthIndexFromUTC(o.t);
-        if (!byMonth.has(mi)) byMonth.set(mi, []);
-        byMonth.get(mi).push(o);
-      }
+      const byMonth=new Map();
+      for(const o of sorted){ const mi=getMonthIndexFromUTC(o.t); if(!byMonth.has(mi)) byMonth.set(mi,[]); byMonth.get(mi).push(o); }
 
-      const monthToBandBlock = [];
-      let idx = 0;
-      for (let b=0;b<BANDS.length;b++){
-        for (let k=0;k<BLOCKS.length;k++){
-          monthToBandBlock[idx] = { band:BANDS[b], block:BLOCKS[k] };
-          idx++;
-        }
-      }
+      const monthToBandBlock=[]; let idx=0; for(let b=0;b<BANDS.length;b++){ for(let k=0;k<BLOCKS.length;k++){ monthToBandBlock[idx]={band:BANDS[b],block:BLOCKS[k]}; idx++; } }
 
-      const redFill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFFCCCC'} };
-      const numFmt = '0.00';
+      for(let mi=0;mi<12;mi++){
+        const slot=monthToBandBlock[mi]; if(!slot) continue;
+        const labelCell=`${slot.block.mois}${slot.band.start}`; ws.getCell(labelCell).value=MONTHS_FR[mi]; ws.getCell(labelCell).fill=null;
 
-      for (let mi=0; mi<12; mi++){
-        const slot = monthToBandBlock[mi];
-        if (!slot) continue;
+        const rows=byMonth.get(mi)||[]; let r=slot.band.start;
+        for(const o of rows){
+          if(r>slot.band.end) break;
+          const djs=new Date(o.t);
+          const jourCell=ws.getCell(`${slot.block.jour}${r}`);
+          jourCell.value=new Date(Date.UTC(djs.getUTCFullYear(),djs.getUTCMonth(),djs.getUTCDate(),23,59,59));
+          jourCell.fill=null;
 
-        const labelCell = `${slot.block.mois}${slot.band.start}`;
-        ws.getCell(labelCell).value = MONTHS_FR[mi];
-        ws.getCell(labelCell).fill = null;
+          const d=mapD.get(o.dStr), p=mapP.get(o.dStr);
+          const debCell=ws.getCell(`${slot.block.deb}${r}`), phCell=ws.getCell(`${slot.block.ph}${r}`);
 
-        const rows = byMonth.get(mi) || [];
-        let r = slot.band.start;
-        for (const o of rows){
-          if (r > slot.band.end) break;
-          const djs = new Date(o.t);
-
-          const jourCell = ws.getCell(`${slot.block.jour}${r}`);
-          jourCell.value = new Date(Date.UTC(djs.getUTCFullYear(),djs.getUTCMonth(),djs.getUTCDate(),23,59,59));
-          jourCell.fill = null;
-
-          const d = mapD.get(o.dStr);
-          const p = mapP.get(o.dStr);
-
-          const debCell = ws.getCell(`${slot.block.deb}${r}`);
-          const phCell  = ws.getCell(`${slot.block.ph}${r}`);
-
-          if (d){
-            debCell.value = Number(d.value);
-            debCell.numFmt = numFmt;
-            debCell.fill = d.isAlert ? redFill : null;
-          } else { debCell.value = null; debCell.fill = null; }
-
-          if (p){
-            phCell.value = Number(p.value);
-            phCell.numFmt = numFmt;
-            phCell.fill = p.isAlert ? redFill : null;
-          } else { phCell.value = null; phCell.fill = null; }
+          if(d){ debCell.value=Number(d.value); debCell.numFmt=numFmt; debCell.fill=d.isAlert?redFill:greenFill; } else { debCell.value=null; debCell.fill=null; }
+          if(p){ phCell.value=Number(p.value);  phCell.numFmt=numFmt; phCell.fill=p.isAlert?redFill:greenFill; } else { phCell.value=null; phCell.fill=null; }
 
           r++;
         }
       }
 
-      // P8:V22 — synthèse par mois
-      const monthlyCounts = computeMonthlyExceedCounts(filteredData.daily, { DEBIT_THRESHOLD, PH_MIN, PH_MAX });
-      await fillTemplateSummaryP8V22(ws, monthlyCounts);
+      const monthlyCounts=computeMonthlyExceedCounts(filteredData.daily,{DEBIT_THRESHOLD,PH_MIN,PH_MAX});
+      await fillTemplateSummaryP8V22(ws,monthlyCounts);
 
-      const buf = await workbook.xlsx.writeBuffer();
-      saveAs(new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), 'export_identique.xlsx');
+      const buf=await workbook.xlsx.writeBuffer();
+      saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'export_identique.xlsx');
     }
 
     async function exportExcelFallback(){
-      if (!filteredData.daily.debit.length && !filteredData.daily.ph.length){
-        alert('Aucune donnée filtrée à exporter.');
-        return;
-      }
-      const workbook = new ExcelJS.Workbook();
-      const ws = workbook.addWorksheet('suivi des débits et du pH');
+      if(!filteredData.daily.debit.length&&!filteredData.daily.ph.length){ alert('Aucune donnée filtrée à exporter.'); return; }
+      const workbook=new ExcelJS.Workbook();
+      const ws=workbook.addWorksheet('suivi des débits et du pH');
 
-      const headerFill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF1D4ED8'} };
-      const headerFont = { color:{argb:'FFFFFFFF'}, bold:true };
-      const borderThin = {style:'thin', color:{argb:'FFCCCCCC'}};
-      const hdr = ['Mois','Jour','Débit (dernière valeur)','pH (moyenne)','Statut Débit','Statut pH'];
-      ws.addRow(hdr);
-      ws.getRow(1).eachCell(c=>{
-        c.fill = headerFill; c.font = headerFont;
-        c.border = {top:borderThin,left:borderThin,bottom:borderThin,right:borderThin};
-        c.alignment = {vertical:'middle', horizontal:'center'};
-      });
+      const headerFill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1D4ED8'}};
+      const headerFont={color:{argb:'FFFFFFFF'},bold:true};
+      const borderThin={style:'thin',color:{argb:'FFCCCCCC'}};
+      const redFill   ={type:'pattern',pattern:'solid',fgColor:{argb:'FFF8D7DA'}}; // >>> CORRECTION
+      const greenFill ={type:'pattern',pattern:'solid',fgColor:{argb:'FFC6EFCE'}}; // >>> CORRECTION
 
-      const mapD = new Map(filteredData.daily.debit.map(d=>[d.date,d]));
-      const mapP = new Map(filteredData.daily.ph.map(d=>[d.date,d]));
-      const allDates = new Set([...mapD.keys(), ...mapP.keys()]);
-      const sorted = Array.from(allDates).sort((a,b)=>dmyStrToUTCms(a)-dmyStrToUTCms(b));
-      const redFill = { type:'pattern', pattern:'solid', fgColor:{argb:'FFFFCCCC'} };
+      const hdr=['Mois','Jour','Débit (dernière valeur)','pH (moyenne)','Statut Débit','Statut pH'];
+      ws.addRow(hdr); ws.getRow(1).eachCell(c=>{ c.fill=headerFill; c.font=headerFont; c.border={top:borderThin,left:borderThin,bottom:borderThin,right:borderThin}; c.alignment={vertical:'middle',horizontal:'center'}; });
+
+      const mapD=new Map(filteredData.daily.debit.map(d=>[d.date,d]));
+      const mapP=new Map(filteredData.daily.ph.map(d=>[d.date,d]));
+      const allDates=new Set([...mapD.keys(),...mapP.keys()]);
+      const sorted=Array.from(allDates).sort((a,b)=>dmyStrToUTCms(a)-dmyStrToUTCms(b));
+
       sorted.forEach(ds=>{
-        const t = dmyStrToUTCms(ds);
-        const dObj = new Date(t);
-        const mois = MONTHS_FR[dObj.getUTCMonth()];
-        const d = mapD.get(ds);
-        const p = mapP.get(ds);
-        const row = ws.addRow([
+        const t=dmyStrToUTCms(ds), dObj=new Date(t); const mois=MONTHS_FR[dObj.getUTCMonth()];
+        const d=mapD.get(ds), p=mapP.get(ds);
+        const row=ws.addRow([
           mois,
           new Date(Date.UTC(dObj.getUTCFullYear(),dObj.getUTCMonth(),dObj.getUTCDate())),
           d?Number(d.value):null,
@@ -1023,24 +647,16 @@
           d?(d.isAlert?'ALERTE':'OK'):'',
           p?(p.isAlert?'ALERTE':'OK'):''
         ]);
-        row.getCell(3).numFmt = '0.00';
-        row.getCell(4).numFmt = '0.00';
-        row.eachCell(c=>{ c.border = {top:borderThin,left:borderThin,bottom:borderThin,right:borderThin}; });
-        if (d && d.isAlert) row.getCell(3).fill = redFill;
-        if (p && p.isAlert) row.getCell(4).fill = redFill;
+        row.getCell(3).numFmt='0.00'; row.getCell(4).numFmt='0.00';
+        row.eachCell(c=>{ c.border={top:borderThin,left:borderThin,bottom:borderThin,right:borderThin}; });
+        if(d) row.getCell(3).fill = d.isAlert ? redFill : greenFill;  // >>> CORRECTION
+        if(p) row.getCell(4).fill = p.isAlert ? redFill : greenFill;  // >>> CORRECTION
       });
 
-      ws.columns = [
-        { key:'mois', width:14 },
-        { key:'jour', width:14 },
-        { key:'debit', width:22 },
-        { key:'ph', width:16 },
-        { key:'sd', width:14 },
-        { key:'sp', width:12 }
-      ];
+      ws.columns=[{key:'mois',width:14},{key:'jour',width:14},{key:'debit',width:22},{key:'ph',width:16},{key:'sd',width:14},{key:'sp',width:12}];
 
-      const buf = await workbook.xlsx.writeBuffer();
-      saveAs(new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}), 'export_fallback.xlsx');
+      const buf=await workbook.xlsx.writeBuffer();
+      saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'export_fallback.xlsx');
     }
   </script>
 </body>

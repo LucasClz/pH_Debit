@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Analyseur Débit & pH — Modèle par défaut (MFC robuste + écarts mensuels)</title>
+  <title>Analyseur Débit & pH — Modèle par défaut (MFC + compte écarts)</title>
 
   <!-- UI -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -31,7 +31,11 @@
   <div class="container mx-auto px-4 py-8 max-w-7xl">
     <header class="mb-6">
       <h1 class="text-3xl font-bold text-gray-800">📊 Analyseur Débit & pH — Modèle par défaut</h1>
-      <p class="text-gray-600">Couleurs via <b>MFC</b> (zéro/vide exclus), pH conforme en vert, et <b>sommes d’écarts</b> Q11:Q22 / R11:R22.</p>
+      <p class="text-gray-600">
+        Modèle <b>Modèle.xlsx</b> (ou <b>Modele.xlsx</b>) chargé automatiquement. <br/>
+        MFC : 0/vide = aucune couleur ; pH conforme (5.5 &lt; v &lt; 8.5) en <span class="text-green-600 font-semibold">vert</span>. <br/>
+        Q11..Q22 = <b>nombre</b> de jours avec débit ≥ 220 ; R11..R22 = <b>nombre</b> de jours avec pH hors [5.5 ; 8.5].
+      </p>
     </header>
 
     <section class="bg-white rounded-lg shadow p-6 mb-6">
@@ -145,21 +149,21 @@
 
     // mapping exact 2025 (Jan..Sep) + Oct–Nov–Déc
     const MONTH_MAP_2025 = {
-      0: { jourCol:'B', debitCol:'C', phCol:'D', startRow:14,  endRow:44  }, // Jan
-      1: { jourCol:'G', debitCol:'H', phCol:'I', startRow:14,  endRow:41  }, // Fév
-      2: { jourCol:'L', debitCol:'M', phCol:'N', startRow:14,  endRow:44  }, // Mar
-      3: { jourCol:'B', debitCol:'C', phCol:'D', startRow:50,  endRow:79  }, // Avr
-      4: { jourCol:'G', debitCol:'H', phCol:'I', startRow:50,  endRow:80  }, // Mai
-      5: { jourCol:'L', debitCol:'M', phCol:'N', startRow:50,  endRow:79  }, // Juin
-      6: { jourCol:'B', debitCol:'C', phCol:'D', startRow:86,  endRow:116 }, // Juil
-      7: { jourCol:'G', debitCol:'H', phCol:'I', startRow:86,  endRow:116 }, // Août
-      8: { jourCol:'L', debitCol:'M', phCol:'N', startRow:86,  endRow:115 }, // Sept
-      9: { jourCol:'B', debitCol:'C', phCol:'D', startRow:122, endRow:152 }, // Oct
-      10:{ jourCol:'G', debitCol:'H', phCol:'I', startRow:122, endRow:151 }, // Nov
-      11:{ jourCol:'L', debitCol:'M', phCol:'N', startRow:122, endRow:152 }  // Déc
+      0: { jourCol:'B', debitCol:'C', phCol:'D', startRow:14,  endRow:44  }, // Jan (31)
+      1: { jourCol:'G', debitCol:'H', phCol:'I', startRow:14,  endRow:41  }, // Fév (28)
+      2: { jourCol:'L', debitCol:'M', phCol:'N', startRow:14,  endRow:44  }, // Mar (31)
+      3: { jourCol:'B', debitCol:'C', phCol:'D', startRow:50,  endRow:79  }, // Avr (30)
+      4: { jourCol:'G', debitCol:'H', phCol:'I', startRow:50,  endRow:80  }, // Mai (31)
+      5: { jourCol:'L', debitCol:'M', phCol:'N', startRow:50,  endRow:79  }, // Juin (30)
+      6: { jourCol:'B', debitCol:'C', phCol:'D', startRow:86,  endRow:116 }, // Juil (31)
+      7: { jourCol:'G', debitCol:'H', phCol:'I', startRow:86,  endRow:116 }, // Août (31)
+      8: { jourCol:'L', debitCol:'M', phCol:'N', startRow:86,  endRow:115 }, // Sept (30)
+      9: { jourCol:'B', debitCol:'C', phCol:'D', startRow:122, endRow:152 }, // Oct (31)
+      10:{ jourCol:'G', debitCol:'H', phCol:'I', startRow:122, endRow:151 }, // Nov (30)
+      11:{ jourCol:'L', debitCol:'M', phCol:'N', startRow:122, endRow:152 }  // Déc (31)
     };
 
-    // plages par type (pour MFC et reset)
+    // plages par type (pour MFC & reset & calculs)
     const DEBIT_REFS = [
       'C14:C44','H14:H41','M14:M44',
       'C50:C79','H50:H80','M50:M79',
@@ -173,7 +177,7 @@
       'D122:D152','I122:I151','N122:N152'
     ];
 
-    // Couleurs directes (fallback)
+    // Fallback fills
     const FILL_RED   = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFFF0000' } };
     const FILL_GREEN = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF00B050' } };
 
@@ -216,8 +220,41 @@
     function isPhAlert(v){ return typeof v === 'number' && isFinite(v) && (v <= PH_MIN || v >= PH_MAX); }
     function colorize(cell, alert){ cell.fill = (alert===null) ? null : (alert ? FILL_RED : FILL_GREEN); }
 
+    // Helpers pour calculs colonnes/écarts (comptage)
+    function colToNum(col){ let n=0; const s=String(col).toUpperCase().replace(/[^A-Z]/g,''); for(let i=0;i<s.length;i++){ n=n*26+(s.charCodeAt(i)-64);} return n; }
+    function countDebitOut(ws, ref, threshold){
+      const m = ref.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/i); if(!m) return 0;
+      const c = colToNum(m[1]), r1=+m[2], r2=+m[4]; let cnt=0;
+      for(let r=r1;r<=r2;r++){
+        const v = Number(ws.getCell(r,c).value);
+        if(isFinite(v) && v>threshold) cnt++;
+      }
+      return cnt;
+    }
+    function countPhOut(ws, ref, min, max){
+      const m = ref.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/i); if(!m) return 0;
+      const c = colToNum(m[1]), r1=+m[2], r2=+m[4]; let cnt=0;
+      for(let r=r1;r<=r2;r++){
+        const v = Number(ws.getCell(r,c).value);
+        if(!isFinite(v) || v<=0) continue; // 0/vide exclus
+        if(v<min || v>max) cnt++;
+      }
+      return cnt;
+    }
+
     // ---------------------- INIT ----------------------
     window.addEventListener('load',()=>{
+      // tabs
+      document.querySelectorAll('.nav-tab').forEach(tab=>{
+        tab.addEventListener('click',()=>{
+          const target=tab.dataset.tab;
+          document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+          tab.classList.add('active');
+          document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));
+          document.getElementById(target+'Tab').classList.remove('hidden');
+        });
+      });
+
       // uploads
       setupFileUpload('Debit',(d)=>{debitData=d; setReady();});
       setupFileUpload('Ph',(d)=>{phData=d; setReady();});
@@ -403,7 +440,7 @@
       document.getElementById('phTable').innerHTML=pRows || '<tr><td class="px-3 py-2 text-sm" colspan="3">Aucune donnée.</td></tr>';
     }
 
-    // ---------------------- EXPORT AVEC MODÈLE (MFC robuste + formules Q/R) ----------------------
+    // ---------------------- EXPORT AVEC MODÈLE ----------------------
     async function exportWithTemplate(){
       try{
         if(!templateArrayBuffer){ alert('Modèle non chargé.'); return; }
@@ -413,16 +450,14 @@
         await wb.xlsx.load(templateArrayBuffer);
         let ws = wb.getWorksheet('suivi des débits et du pH') || wb.worksheets[0];
 
-        // 1) reset valeurs/couleurs précédentes
+        // 1) reset valeurs/couleurs précédentes (sans toucher aux dates)
         const allZones = [
           // Jan–Sep
           {cols:['C','D'], from:14, to:44},{cols:['H','I'], from:14, to:41},{cols:['M','N'], from:14, to:44},
           {cols:['C','D'], from:50, to:79},{cols:['H','I'], from:50, to:80},{cols:['M','N'], from:50, to:79},
           {cols:['C','D'], from:86, to:116},{cols:['H','I'], from:86, to:116},{cols:['M','N'], from:86, to:115},
           // Oct–Nov–Déc
-          {cols:['C','D'], from:122, to:152}, // Oct
-          {cols:['H','I'], from:122, to:151}, // Nov
-          {cols:['M','N'], from:122, to:152}  // Déc
+          {cols:['C','D'], from:122, to:152},{cols:['H','I'], from:122, to:151},{cols:['M','N'], from:122, to:152}
         ];
         allZones.forEach(z=>{
           for(let r=z.from;r<=z.to;r++){
@@ -433,7 +468,7 @@
           }
         });
 
-        // 2) écrire valeurs aux adresses exactes
+        // 2) écrire valeurs aux adresses exactes (2025)
         const mapD=new Map(processed.filtered.debit.map(d=>[d.date,d]));
         const mapP=new Map(processed.filtered.ph.map(p=>[p.date,p]));
         const allDates=new Set([...mapD.keys(),...mapP.keys()]);
@@ -462,7 +497,7 @@
           } else { pCell.value=null; }
         });
 
-        // 3) MISE EN FORME CONDITIONNELLE (zéro/vide exclus)
+        // 3) MISE EN FORME CONDITIONNELLE (0/vide exclus ; pH vert)
         let mfcOk = false;
         try{
           if (ws.model && Array.isArray(ws.model.conditionalFormattings)) ws.model.conditionalFormattings = [];
@@ -470,8 +505,9 @@
           const RED  = { fill:{ type:'pattern', pattern:'solid', fgColor:{argb:'FFFF0000'}, bgColor:{argb:'FFFF0000'} } };
           const GREEN= { fill:{ type:'pattern', pattern:'solid', fgColor:{argb:'FF00B050'}, bgColor:{argb:'FF00B050'} } };
 
-          const firstAddr = (ref)=>ref.split(':')[0]; // ex 'C14'
-          // Débit : rouge si v>=220 ; vert si v<220 ET v>0 (0/vide => pas de couleur)
+          const firstAddr = (ref)=>ref.split(':')[0];
+
+          // Débit : rouge si >=220 ; vert si 0<val<220
           DEBIT_REFS.forEach(ref=>{
             const addr=firstAddr(ref);
             ws.addConditionalFormatting({ ref, rules:[
@@ -480,7 +516,7 @@
             ]});
           });
 
-          // pH : rouge si v<=5.5 (et v>0), rouge si v>=8.5, vert si 5.5<v<8.5 (v>0)
+          // pH : rouge si <=5.5 (>0), rouge si >=8.5, vert si 5.5<val<8.5 (>0)
           PH_REFS.forEach(ref=>{
             const addr=firstAddr(ref);
             ws.addConditionalFormatting({ ref, rules:[
@@ -496,7 +532,24 @@
           mfcOk = false;
         }
 
-        // 4) Fallback couleurs directes (si MFC KO) — on ignore 0/vide
+        // 4) Q11..Q22 = NB écarts Débit ; R11..R22 = NB écarts pH (0/vide exclus)
+        for(let i=0;i<12;i++){
+          const qCell = ws.getCell(11+i, 17); // Q
+          const rCell = ws.getCell(11+i, 18); // R
+          const dRef = DEBIT_REFS[i];
+          const pRef = PH_REFS[i];
+
+          const debitCount = countDebitOut(ws, dRef, DEBIT_THRESHOLD);
+          const phCount    = countPhOut(ws, pRef, PH_MIN, PH_MAX);
+
+          qCell.value = { formula: `SUMPRODUCT(--(${dRef}>${DEBIT_THRESHOLD}))`, result: debitCount };
+          rCell.value = { formula: `SUMPRODUCT(--((${pRef}>0)*((${pRef}<${PH_MIN})+(${pRef}>${PH_MAX}))))`, result: phCount };
+
+          qCell.numFmt = '0';
+          rCell.numFmt = '0';
+        }
+
+        // 5) Fallback couleurs directes si MFC KO — 0/vide ignorés
         if(!mfcOk){
           sorted.forEach(o=>{
             const dt=new Date(o.t); if(dt.getUTCFullYear()!==2025) return;
@@ -504,10 +557,12 @@
             const row=cfg.startRow + (dt.getUTCDate()-1);
             const dCell=ws.getCell(`${cfg.debitCol}${row}`);
             const pCell=ws.getCell(`${cfg.phCol}${row}`);
+
             if(dCell.value!=null && dCell.value!=='' && Number(dCell.value)>0){
               const v=Number(dCell.value);
               dCell.fill=null; colorize(dCell, isFinite(v)?isDebitAlert(v):null);
             } else dCell.fill=null;
+
             if(pCell.value!=null && pCell.value!=='' && Number(pCell.value)>0){
               const v=Number(pCell.value);
               pCell.fill=null; colorize(pCell, isFinite(v)?isPhAlert(v):null);
@@ -515,36 +570,10 @@
           });
         }
 
-        // 5) FORMULES Q11..Q22 (écarts Débit) et R11..R22 (écarts pH)
-        // Débit : écart = (v-220) si v>220, sinon 0 ; on ignore 0/vide naturellement.
-        const monthDebitRanges = [
-          'C14:C44','H14:H41','M14:M44','C50:C79','H50:H80','M50:M79',
-          'C86:C116','H86:H116','M86:M115','C122:C152','H122:H151','M122:M152'
-        ];
-        // pH : écart = (5.5-v) si v<5.5 ; (v-8.5) si v>8.5 ; sinon 0.
-        const monthPhRanges = [
-          'D14:D44','I14:I41','N14:N44','D50:D79','I50:I80','N50:N79',
-          'D86:D116','I86:I116','N86:N115','D122:D152','I122:I151','N122:N152'
-        ];
-
-        // Lignes Q/R 11..22 → index 0..11
-        for(let i=0;i<12;i++){
-          const qCell = ws.getCell(11+i, 17); // Q=17
-          const rCell = ws.getCell(11+i, 18); // R=18
-          const dRef = monthDebitRanges[i];
-          const pRef = monthPhRanges[i];
-
-          // Débit : SUMPRODUCT((range>220)*(range-220))
-          qCell.value = { formula: `SUMPRODUCT((${dRef}>${DEBIT_THRESHOLD})*(${dRef}-${DEBIT_THRESHOLD}))` };
-
-          // pH : SUMPRODUCT( (range>0)*((range<5.5)*(5.5-range) + (range>8.5)*(range-8.5)) )
-          rCell.value = { formula: `SUMPRODUCT((${pRef}>0)*((${pRef}<${PH_MIN})*(${PH_MIN}-${pRef}) + (${pRef}>${PH_MAX})*(${pRef}-${PH_MAX})))` };
-        }
-
         // 6) export
         const buf=await wb.xlsx.writeBuffer();
         saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'export_dep_ph_modele.xlsx');
-        showBanner('ok', mfcOk ? 'Export OK ✔ (MFC active, 0/vide exclus, pH vert entre 5.5 et 8.5).' : 'Export OK ✔ (couleurs appliquées en fallback ; 0/vide exclus).');
+        showBanner('ok', mfcOk ? 'Export OK ✔ (MFC active ; comptage Q/R rempli + formule).' : 'Export OK ✔ (fallback couleur ; comptage Q/R rempli + formule).');
       }catch(err){
         console.error(err);
         showBanner('err','❌ Export échoué. Vérifiez que la page est servie en <b>http://</b> et regardez la console pour le détail.');

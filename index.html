@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Analyseur Débit & pH — Modèle par défaut (MFC + fallback)</title>
+  <title>Analyseur Débit & pH — Modèle par défaut (MFC robuste + Oct–Déc)</title>
 
   <!-- UI -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -31,7 +31,7 @@
   <div class="container mx-auto px-4 py-8 max-w-7xl">
     <header class="mb-6">
       <h1 class="text-3xl font-bold text-gray-800">📊 Analyseur Débit & pH — Modèle par défaut</h1>
-      <p class="text-gray-600">Le modèle <b>Modèle.xlsx</b> est chargé automatiquement (ou <b>Modele.xlsx</b>). Couleurs via <b>MFC si dispo</b>, sinon <b>fallback</b> (rouge/vert en dur).</p>
+      <p class="text-gray-600">Couleurs via <b>MFC</b> (avec fallback si besoin). Octobre, Novembre et Décembre ajoutés.</p>
     </header>
 
     <section class="bg-white rounded-lg shadow p-6 mb-6">
@@ -143,18 +143,35 @@
     const PH_MIN = 5.5, PH_MAX = 8.5;
     const NUM_FMT = '0.00';
 
-    // mapping exact 2025
+    // mapping exact 2025 (Jan..Sep existants) + Oct–Nov–Déc (selon tes consignes)
     const MONTH_MAP_2025 = {
-      0: { jourCol:'B', debitCol:'C', phCol:'D', startRow:14, endRow:44 }, // Jan
-      1: { jourCol:'G', debitCol:'H', phCol:'I', startRow:14, endRow:41 }, // Fév
-      2: { jourCol:'L', debitCol:'M', phCol:'N', startRow:14, endRow:44 }, // Mar
-      3: { jourCol:'B', debitCol:'C', phCol:'D', startRow:50, endRow:79 }, // Avr
-      4: { jourCol:'G', debitCol:'H', phCol:'I', startRow:50, endRow:80 }, // Mai
-      5: { jourCol:'L', debitCol:'M', phCol:'N', startRow:50, endRow:79 }, // Juin
-      6: { jourCol:'B', debitCol:'C', phCol:'D', startRow:86, endRow:116}, // Juil
-      7: { jourCol:'G', debitCol:'H', phCol:'I', startRow:86, endRow:116}, // Août
-      8: { jourCol:'L', debitCol:'M', phCol:'N', startRow:86, endRow:115}  // Sept
+      0: { jourCol:'B', debitCol:'C', phCol:'D', startRow:14,  endRow:44  }, // Jan
+      1: { jourCol:'G', debitCol:'H', phCol:'I', startRow:14,  endRow:41  }, // Fév
+      2: { jourCol:'L', debitCol:'M', phCol:'N', startRow:14,  endRow:44  }, // Mar
+      3: { jourCol:'B', debitCol:'C', phCol:'D', startRow:50,  endRow:79  }, // Avr
+      4: { jourCol:'G', debitCol:'H', phCol:'I', startRow:50,  endRow:80  }, // Mai
+      5: { jourCol:'L', debitCol:'M', phCol:'N', startRow:50,  endRow:79  }, // Juin
+      6: { jourCol:'B', debitCol:'C', phCol:'D', startRow:86,  endRow:116 }, // Juil
+      7: { jourCol:'G', debitCol:'H', phCol:'I', startRow:86,  endRow:116 }, // Août
+      8: { jourCol:'L', debitCol:'M', phCol:'N', startRow:86,  endRow:115 }, // Sept
+      9: { jourCol:'B', debitCol:'C', phCol:'D', startRow:122, endRow:152 }, // Oct (C/D 122–152)
+      10:{ jourCol:'G', debitCol:'H', phCol:'I', startRow:122, endRow:151 }, // Nov (H/I 122–151)
+      11:{ jourCol:'L', debitCol:'M', phCol:'N', startRow:122, endRow:152 }  // Déc (M/N 122–152)
     };
+
+    // plages par type (pour MFC et reset)
+    const DEBIT_REFS = [
+      'C14:C44','H14:H41','M14:M44',
+      'C50:C79','H50:H80','M50:M79',
+      'C86:C116','H86:H116','M86:M115',
+      'C122:C152','H122:H151','M122:M152' // Oct, Nov, Déc
+    ];
+    const PH_REFS = [
+      'D14:D44','I14:I41','N14:N44',
+      'D50:D79','I50:I80','N50:N79',
+      'D86:D116','I86:I116','N86:N115',
+      'D122:D152','I122:I151','N122:N152' // Oct, Nov, Déc
+    ];
 
     // Couleurs directes (fallback)
     const FILL_RED   = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFFF0000' } };
@@ -397,18 +414,17 @@
         let ws = wb.getWorksheet('suivi des débits et du pH') || wb.worksheets[0];
 
         // 1) reset valeurs/couleurs précédentes
-        const zones = [
-          {cols:['C','D'], from:14, to:44},   // Jan
-          {cols:['H','I'], from:14, to:41},   // Fév
-          {cols:['M','N'], from:14, to:44},   // Mar
-          {cols:['C','D'], from:50, to:79},   // Avr
-          {cols:['H','I'], from:50, to:80},   // Mai
-          {cols:['M','N'], from:50, to:79},   // Juin
-          {cols:['C','D'], from:86, to:116},  // Juil
-          {cols:['H','I'], from:86, to:116},  // Août
-          {cols:['M','N'], from:86, to:115}   // Sept
+        const allZones = [
+          // Jan–Sep
+          {cols:['C','D'], from:14, to:44},{cols:['H','I'], from:14, to:41},{cols:['M','N'], from:14, to:44},
+          {cols:['C','D'], from:50, to:79},{cols:['H','I'], from:50, to:80},{cols:['M','N'], from:50, to:79},
+          {cols:['C','D'], from:86, to:116},{cols:['H','I'], from:86, to:116},{cols:['M','N'], from:86, to:115},
+          // Oct–Nov–Déc (ajoutés)
+          {cols:['C','D'], from:122, to:152}, // Oct
+          {cols:['H','I'], from:122, to:151}, // Nov
+          {cols:['M','N'], from:122, to:152}  // Déc
         ];
-        zones.forEach(z=>{
+        allZones.forEach(z=>{
           for(let r=z.from;r<=z.to;r++){
             z.cols.forEach(c=>{
               const cell=ws.getCell(`${c}${r}`);
@@ -447,34 +463,28 @@
         });
 
         // 3) essayer d'ajouter la MFC ; si échec → fallback couleur directe
-        const debitRefs = ['C14:C44','H14:H41','M14:M44','C50:C79','H50:H80','M50:M79','C86:C116','H86:H116','M86:M115'];
-        const phRefs    = ['D14:D44','I14:I41','N14:N44','D50:D79','I50:I80','N50:N79','D86:D116','I86:I116','N86:N115'];
-
         let mfcOk = false;
         try{
           // purge anciennes MFC si présentes
           if (ws.model && Array.isArray(ws.model.conditionalFormattings)) ws.model.conditionalFormattings = [];
-          // styles
+
           const RED  = { fill:{ type:'pattern', pattern:'solid', fgColor:{argb:'FFFF0000'}, bgColor:{argb:'FFFF0000'} } };
           const GREEN= { fill:{ type:'pattern', pattern:'solid', fgColor:{argb:'FF00B050'}, bgColor:{argb:'FF00B050'} } };
 
-          // débit
-          debitRefs.forEach(ref=>{
-            ws.addConditionalFormatting({
-              ref,
-              rules: [
-                { type:'cellIs', operator:'greaterThanOrEqual', formulae:[String(DEBIT_THRESHOLD)], style: RED  },
-                { type:'cellIs', operator:'lessThan',            formulae:[String(DEBIT_THRESHOLD)], style: GREEN}
-              ]
-            });
+          // Débit : rouge >=220, vert <220
+          DEBIT_REFS.forEach(ref=>{
+            ws.addConditionalFormatting({ ref, rules:[
+              { type:'cellIs', operator:'greaterThanOrEqual', formulae:[String(DEBIT_THRESHOLD)], style: RED  },
+              { type:'cellIs', operator:'lessThan',            formulae:[String(DEBIT_THRESHOLD)], style: GREEN}
+            ]});
           });
-          // pH
-          phRefs.forEach(ref=>{
-            const baseCol = ref.split(':')[0].replace(/\d+/g,''); // ex: 'D'
+
+          // pH : rouge <=5.5, rouge >=8.5, vert entre (strict)
+          PH_REFS.forEach(ref=>{
             ws.addConditionalFormatting({ ref, rules:[{ type:'cellIs', operator:'lessThanOrEqual', formulae:[String(PH_MIN)], style: RED }]});
             ws.addConditionalFormatting({ ref, rules:[{ type:'cellIs', operator:'greaterThanOrEqual', formulae:[String(PH_MAX)], style: RED }]});
-            ws.addConditionalFormatting({ ref, rules:[{ type:'expression', formulae:[`AND(${baseCol}1>${PH_MIN},${baseCol}1<${PH_MAX})`.replace(/1$/, '')], style: GREEN }]});
-            // Remarque: Excel ignore l'index de ligne dans l'expression et applique la logique par cellule.
+            // expression générique cellule courante (pas de référence figée)
+            ws.addConditionalFormatting({ ref, rules:[{ type:'expression', formulae:[`AND(INDIRECT(ADDRESS(ROW(),COLUMN()))>${PH_MIN},INDIRECT(ADDRESS(ROW(),COLUMN()))<${PH_MAX})`], style: GREEN }]});
           });
 
           mfcOk = true;
@@ -508,7 +518,7 @@
         showBanner('ok', mfcOk ? 'Export OK ✔ (couleurs via MFC).' : 'Export OK ✔ (couleurs appliquées en fallback).');
       }catch(err){
         console.error(err);
-        showBanner('err','❌ Export échoué. Ouvrez la console pour le détail. Vérifiez surtout que la page est servie en <b>http://</b> pour que le modèle soit bien chargé.');
+        showBanner('err','❌ Export échoué. Vérifiez que la page est servie en <b>http://</b> et regardez la console pour le détail.');
       }
     }
   </script>

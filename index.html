@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Analyseur Débit & pH — Export avec Modèle (couleurs respectées)</title>
+  <title>Analyseur Débit & pH — Modèle par défaut + MFC fiable</title>
 
   <!-- UI -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -12,7 +12,6 @@
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
   <style>
     .upload-zone{border:2px dashed #d1d5db;transition:all .2s ease}
@@ -31,8 +30,8 @@
 
   <div class="container mx-auto px-4 py-8 max-w-7xl">
     <header class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-800">📊 Analyseur Débit & pH — Export avec <span class="text-blue-700">Modèle fourni</span></h1>
-      <p class="text-gray-600">Couleurs appliquées en dur (rouge/vert) selon seuils — images du modèle ré-insérées automatiquement.</p>
+      <h1 class="text-3xl font-bold text-gray-800">📊 Analyseur Débit & pH — Modèle <span class="text-blue-700">par défaut</span> + <span class="text-green-700">MFC robuste</span></h1>
+      <p class="text-gray-600">Le modèle <b>Modèle.xlsx</b> est chargé automatiquement (ou <b>Modele.xlsx</b>). Les couleurs sont assurées par <b>mise en forme conditionnelle</b> dans l’export.</p>
     </header>
 
     <section class="bg-white rounded-lg shadow p-6 mb-6">
@@ -53,16 +52,16 @@
           <h3 class="text-sm font-medium text-gray-700 mb-2">🧪 Fichier pH</h3>
           <div id="uploadZonePh" class="upload-zone rounded-lg p-5 text-center cursor-pointer">
             <p class="text-sm text-gray-600">Cliquez / déposez</p>
-            <p class="text-xs text-gray-400">Seuils alerte : ≤ 5.5 ou ≥ 8.5</p>
+            <p class="text-xs text-gray-400">Seuils : ≤ 5.5 ou ≥ 8.5</p>
           </div>
           <input type="file" id="fileInputPh" accept=".xlsx,.xls,.csv" class="hidden">
           <div id="fileInfoPh" class="mt-2 hidden text-sm"><span id="fileNamePh" class="font-medium"></span> <span id="fileSizePh" class="text-gray-500"></span></div>
         </div>
 
         <div>
-          <h3 class="text-sm font-medium text-gray-700 mb-2">📄 Modèle (automatique)</h3>
+          <h3 class="text-sm font-medium text-gray-700 mb-2">📄 Modèle (chargé par défaut)</h3>
           <div class="rounded-lg p-5 bg-blue-50 border border-blue-200 text-blue-800 text-sm">
-            Cherche <b>Modèle.xlsx</b> (ou <b>Modele.xlsx</b>) à côté de cette page.
+            Recherche <b>Modèle.xlsx</b> (ou <b>Modele.xlsx</b>) dans ce dossier.
             <div id="modelStatus" class="mt-1 text-xs text-blue-700"></div>
           </div>
         </div>
@@ -84,7 +83,7 @@
 
       <div class="mt-5 flex gap-3">
         <button id="analyzeBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium disabled:bg-gray-300" disabled>🔍 Analyser</button>
-        <button id="exportTemplateBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg font-medium" disabled>📥 Excel (avec modèle & images)</button>
+        <button id="exportTemplateBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-lg font-medium" disabled>📥 Excel (via Modèle + MFC)</button>
       </div>
     </section>
 
@@ -144,25 +143,21 @@
     const PH_MIN = 5.5, PH_MAX = 8.5;
     const NUM_FMT = '0.00';
 
-    const FILL_RED   = { type:'pattern', pattern:'solid', fgColor:{ argb:'FFFF0000' } }; // rouge
-    const FILL_GREEN = { type:'pattern', pattern:'solid', fgColor:{ argb:'FF00B050' } }; // vert Excel
-
     // mapping exact 2025
     const MONTH_MAP_2025 = {
-      0: { label:'JAN', jourCol:'B', debitCol:'C', phCol:'D', startRow:14, endRow:44 }, // Jan (31)
-      1: { label:'FEV', jourCol:'G', debitCol:'H', phCol:'I', startRow:14, endRow:41 }, // Fév (28)
-      2: { label:'MAR', jourCol:'L', debitCol:'M', phCol:'N', startRow:14, endRow:44 }, // Mar (31)
-      3: { label:'AVR', jourCol:'B', debitCol:'C', phCol:'D', startRow:50, endRow:79 }, // Avr (30)
-      4: { label:'MAI', jourCol:'G', debitCol:'H', phCol:'I', startRow:50, endRow:80 }, // Mai (31)
-      5: { label:'JUN', jourCol:'L', debitCol:'M', phCol:'N', startRow:50, endRow:79 }, // Juin (30)
-      6: { label:'JUL', jourCol:'B', debitCol:'C', phCol:'D', startRow:86, endRow:116}, // Juil (31)
-      7: { label:'AOU', jourCol:'G', debitCol:'H', phCol:'I', startRow:86, endRow:116}, // Août (31)
-      8: { label:'SEP', jourCol:'L', debitCol:'M', phCol:'N', startRow:86, endRow:115}  // Sept (30)
+      0: { jourCol:'B', debitCol:'C', phCol:'D', startRow:14, endRow:44 }, // Jan (31)
+      1: { jourCol:'G', debitCol:'H', phCol:'I', startRow:14, endRow:41 }, // Fév (28)
+      2: { jourCol:'L', debitCol:'M', phCol:'N', startRow:14, endRow:44 }, // Mar (31)
+      3: { jourCol:'B', debitCol:'C', phCol:'D', startRow:50, endRow:79 }, // Avr (30)
+      4: { jourCol:'G', debitCol:'H', phCol:'I', startRow:50, endRow:80 }, // Mai (31)
+      5: { jourCol:'L', debitCol:'M', phCol:'N', startRow:50, endRow:79 }, // Juin (30)
+      6: { jourCol:'B', debitCol:'C', phCol:'D', startRow:86, endRow:116}, // Juil (31)
+      7: { jourCol:'G', debitCol:'H', phCol:'I', startRow:86, endRow:116}, // Août (31)
+      8: { jourCol:'L', debitCol:'M', phCol:'N', startRow:86, endRow:115}  // Sept (30)
     };
 
     // ---------------------- ÉTAT ----------------------
-    let templateArrayBuffer = null;    // binaire du modèle
-    let templateImages = [];           // [{base64, tl:{row,col,colOff,rowOff}, br:{...}}]
+    let templateArrayBuffer = null;
     let debitData = [], phData = [];
     let processed = { daily:{debit:[], ph:[]}, filtered:{debit:[], ph:[]}, alerts:[], allUTC:[] };
     let startMs=null, endMs=null;
@@ -195,12 +190,13 @@
     }
     function formatDate(d){ const dd=String(d.getDate()).padStart(2,'0'); const mm=String(d.getMonth()+1).padStart(2,'0'); return `${dd}/${mm}/${d.getFullYear()}`; }
     function toInputUTC(ms){ const d=new Date(ms); const y=d.getUTCFullYear(), m=String(d.getUTCMonth()+1).padStart(2,'0'), day=String(d.getUTCDate()).padStart(2,'0'); return `${y}-${m}-${day}`; }
+
     function isDebitAlert(v){ return typeof v === 'number' && isFinite(v) && v >= DEBIT_THRESHOLD; }
     function isPhAlert(v){ return typeof v === 'number' && isFinite(v) && (v <= PH_MIN || v >= PH_MAX); }
-    function colorize(cell, alert){ cell.fill = (alert===null) ? null : (alert ? FILL_RED : FILL_GREEN); }
 
-    // ---------------------- UI INIT ----------------------
+    // ---------------------- INIT ----------------------
     window.addEventListener('load',()=>{
+      // tabs
       document.querySelectorAll('.nav-tab').forEach(tab=>{
         tab.addEventListener('click',()=>{
           const target=tab.dataset.tab;
@@ -215,8 +211,8 @@
       setupFileUpload('Debit',(d)=>{debitData=d; setReady();});
       setupFileUpload('Ph',(d)=>{phData=d; setReady();});
 
-      // modèle
-      loadTemplate();
+      // modèle par défaut
+      loadDefaultTemplate();
 
       // actions
       document.getElementById('analyzeBtn').addEventListener('click', analyze);
@@ -232,6 +228,8 @@
       document.getElementById('analyzeBtn').disabled = !ready;
       document.getElementById('applyFilterBtn').disabled = !ready;
       document.getElementById('resetFilterBtn').disabled = !ready;
+      // export activé une fois modèle chargé + données filtrées
+      updateExportState();
     }
 
     function setupFileUpload(type, callback){
@@ -271,74 +269,29 @@
       }
     }
 
-    // ---------------------- MODÈLE : fetch + extraction images/ancres ----------------------
-    async function fetchBuffer(path){
-      try{
-        const r=await fetch(path,{cache:'no-store'}); if(!r.ok) return null; return await r.arrayBuffer();
-      }catch(_){ return null; }
-    }
-    async function loadTemplate(){
+    // ---------------------- MODÈLE ----------------------
+    async function loadDefaultTemplate(){
+      const statusEl=document.getElementById('modelStatus');
       if (location.protocol==='file:'){
-        showBanner('warn','Page ouverte en <code>file://</code> → les navigateurs bloquent <code>fetch()</code> local. Servez ce dossier via <code>python -m http.server</code> ou une extension Live Server pour charger <b>Modèle.xlsx</b>.');
+        showBanner('warn','Page ouverte en <code>file://</code> → les navigateurs bloquent <code>fetch()</code> local. Servez ce dossier via <code>python -m http.server</code> ou Live Server pour charger <b>Modèle.xlsx</b>.');
+        statusEl.textContent='En attente d’un serveur local (http://).';
         return;
       }
-      let buf = await fetchBuffer('Modèle.xlsx');
-      if(!buf) buf = await fetchBuffer('Modele.xlsx');
-      const statusEl = document.getElementById('modelStatus');
-
-      if(!buf){ showBanner('err','Impossible de charger le modèle <b>Modèle.xlsx</b> (ou <b>Modele.xlsx</b>) dans le même dossier.'); statusEl.textContent='Modèle non chargé.'; return; }
-
-      templateArrayBuffer = buf;
-      statusEl.textContent='Modèle chargé ✔ (images & ancres récupérées)';
-
-      // Extraire images & ancres via JSZip
-      try{
-        const zip = await JSZip.loadAsync(buf);
-        // drawings
-        const drels = ['xl/drawings/drawing1.xml','xl/drawings/drawing2.xml'].filter(p=>zip.file(p));
-        const images = [];
-        for(const d of drels){
-          const xmlTxt = await zip.file(d).async('string');
-          const parser = new DOMParser(); const doc = parser.parseFromString(xmlTxt,'application/xml');
-          const ns = 'http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing';
-          const anchors = Array.from(doc.getElementsByTagNameNS(ns,'twoCellAnchor'));
-          for(const a of anchors){
-            const from = a.getElementsByTagNameNS(ns,'from')[0];
-            const to   = a.getElementsByTagNameNS(ns,'to')[0];
-            if(!from||!to) continue;
-            const g = (node,tag)=>Number(node.getElementsByTagNameNS(ns,tag)[0].textContent||0);
-            const tl = { col:g(from,'col'), colOff:g(from,'colOff'), row:g(from,'row'), rowOff:g(from,'rowOff') };
-            const br = { col:g(to,'col'),   colOff:g(to,'colOff'),   row:g(to,'row'),   rowOff:g(to,'rowOff')   };
-            // relation -> image file
-            // drawing rels: assume image1.png / image2.png exist
-            // On garde simplement toutes les images présentes dans xl/media/
-            images.push({ tl, br });
-          }
-        }
-        // lire tous les png (ordre stable : image1.png, image2.png, ...)
-        const media = (zip.folder('xl/media')||{file:()=>[]}).file(/image\d+\.png/);
-        const b64s=[];
-        for(const f of media){
-          const base64 = await f.async('base64');
-          b64s.push(base64);
-        }
-        // associer par ordre (1er anchor -> 1ère image, etc.)
-        templateImages = (images.length && b64s.length) ? images.slice(0,b64s.length).map((a,i)=>({ ...a, base64:b64s[i] })) : [];
-      }catch(e){
-        console.warn('Extraction images/ancres échouée (optionnelle):', e);
-        templateImages = [];
+      async function tryFetch(name){
+        try{ const r=await fetch(name,{cache:'no-store'}); if(!r.ok) return null; return await r.arrayBuffer(); }
+        catch(_){ return null; }
       }
-
-      // Activer export si données prêtes
+      let buf = await tryFetch('Modèle.xlsx'); if(!buf) buf = await tryFetch('Modele.xlsx');
+      if(!buf){ showBanner('err','Impossible de charger <b>Modèle.xlsx</b> (ou <b>Modele.xlsx</b>).'); statusEl.textContent='Modèle non chargé.'; return; }
+      templateArrayBuffer = buf;
+      statusEl.textContent='Modèle chargé ✔';
       updateExportState();
-      showBanner('ok','Modèle chargé. Lors de l’export : <b>valeurs injectées</b>, <b>couleurs appliquées</b>, <b>images ré-insérées</b>.');
     }
 
     function updateExportState(){
-      const enabled = !!templateArrayBuffer && (processed.filtered.debit.length || processed.filtered.ph.length);
-      const btn = document.getElementById('exportTemplateBtn');
-      btn.disabled = !enabled;
-      btn.title = enabled ? '' : 'Importez/Analysez vos données puis chargez le modèle';
+      const enabled = !!templateArrayBuffer && (processed.filtered?.debit?.length || processed.filtered?.ph?.length);
+      document.getElementById('exportTemplateBtn').disabled = !enabled;
+      document.getElementById('exportTemplateBtn').title = enabled ? '' : 'Importez, analysez et filtrez vos données';
     }
 
     // ---------------------- ANALYSE & FILTRE ----------------------
@@ -346,7 +299,7 @@
       processed.daily.debit = processDebitData(debitData);
       processed.daily.ph    = processPhData(phData);
 
-      // bornes dates
+      // bornes
       const allUTC = Array.from(new Set([...processed.daily.debit.map(d=>d.date), ...processed.daily.ph.map(p=>p.date)]))
         .map(d=>dmyStrToUTCms(d)).filter(Boolean).sort((a,b)=>a-b);
       processed.allUTC = allUTC.slice();
@@ -358,7 +311,6 @@
 
       applyFilter();
       document.getElementById('resultsSection').classList.remove('hidden');
-      updateExportState();
     }
 
     function processDebitData(data){
@@ -462,26 +414,16 @@
       document.getElementById('alertsTable').innerHTML=aRows || '<tr><td class="px-3 py-2 text-sm" colspan="4">Aucune alerte.</td></tr>';
     }
 
-    // ---------------------- EXPORT AVEC MODÈLE ----------------------
+    // ---------------------- EXPORT AVEC MODÈLE + MFC ----------------------
     async function exportWithTemplate(){
       if(!templateArrayBuffer){ alert('Modèle non chargé.'); return; }
       if(!processed.filtered.debit.length && !processed.filtered.ph.length){ alert('Aucune donnée filtrée à exporter.'); return; }
 
-      // charge le modèle dans ExcelJS
       const wb = new ExcelJS.Workbook();
       await wb.xlsx.load(templateArrayBuffer);
-      // choisis la feuille cible
       let ws = wb.getWorksheet('suivi des débits et du pH') || wb.worksheets[0];
 
-      // 1) ré-insérer les images du modèle aux mêmes ancres
-      try{
-        templateImages.forEach(img=>{
-          const id = wb.addImage({ base64:`data:image/png;base64,${img.base64}`, extension:'png' });
-          ws.addImage(id, { tl: img.tl, br: img.br });
-        });
-      }catch(e){ console.warn('Réinsertion images échouée (optionnelle):', e); }
-
-      // 2) reset des cellules valeurs (débit/pH) pour éviter couleurs résiduelles
+      // 1) On efface d'anciennes valeurs/couleurs sans toucher aux dates
       const zones = [
         {cols:['C','D'], from:14, to:44},   // Jan
         {cols:['H','I'], from:14, to:41},   // Fév
@@ -497,14 +439,12 @@
         for(let r=z.from;r<=z.to;r++){
           z.cols.forEach(c=>{
             const cell=ws.getCell(`${c}${r}`);
-            cell.value = null;
-            cell.fill  = null;
-            cell.numFmt= undefined;
+            cell.value=null; cell.fill=null; cell.numFmt=undefined;
           });
         }
       });
 
-      // 3) écrire valeurs + couleurs aux adresses EXACTES
+      // 2) On écrit les valeurs aux adresses EXACTES (2025)
       const mapD=new Map(processed.filtered.debit.map(d=>[d.date,d]));
       const mapP=new Map(processed.filtered.ph.map(p=>[p.date,p]));
       const allDates=new Set([...mapD.keys(),...mapP.keys()]);
@@ -516,9 +456,6 @@
         const day=dt.getUTCDate(); const row=cfg.startRow + (day-1);
         if(row<cfg.startRow || row>cfg.endRow) return;
 
-        // Jour : si tu veux écraser les dates existantes, décommente la ligne suivante
-        // ws.getCell(`${cfg.jourCol}${row}`).value = new Date(Date.UTC(2025,m,day,23,59,59));
-
         const dRec=mapD.get(o.dStr), pRec=mapP.get(o.dStr);
         const debCell=ws.getCell(`${cfg.debitCol}${row}`);
         const phCell =ws.getCell(`${cfg.phCol}${row}`);
@@ -526,21 +463,78 @@
         if(dRec){
           const v=Number(dRec.value);
           debCell.value = isFinite(v)?v:null;
-          debCell.numFmt = NUM_FMT;
-          colorize(debCell, isFinite(v)?isDebitAlert(v):null);
-        } else { debCell.value=null; debCell.fill=null; }
+          if(isFinite(v)) debCell.numFmt=NUM_FMT;
+        } else { debCell.value=null; }
 
         if(pRec){
           const v=Number(pRec.value);
           phCell.value = isFinite(v)?v:null;
-          phCell.numFmt = NUM_FMT;
-          colorize(phCell, isFinite(v)?isPhAlert(v):null);
-        } else { phCell.value=null; phCell.fill=null; }
+          if(isFinite(v)) phCell.numFmt=NUM_FMT;
+        } else { phCell.value=null; }
+      });
+
+      // 3) MISE EN FORME CONDITIONNELLE (MFC) — couleurs garanties par Excel
+      //    NB : ExcelJS 4.x supporte addConditionalFormatting.
+      //    On pose des règles sur les plages “Débit” et “pH”.
+
+      // Construit les réf de plages par type
+      const debitRefs = [
+        'C14:C44','H14:H41','M14:M44', // Jan, Fév, Mar
+        'C50:C79','H50:H80','M50:M79', // Avr, Mai, Juin
+        'C86:C116','H86:H116','M86:M115' // Juil, Août, Sept
+      ];
+      const phRefs = [
+        'D14:D44','I14:I41','N14:N44', // Jan, Fév, Mar
+        'D50:D79','I50:I80','N50:N79', // Avr, Mai, Juin
+        'D86:D116','I86:I116','N86:N115' // Juil, Août, Sept
+      ];
+
+      // (a) On nettoie d’éventuelles anciennes MFC
+      try {
+        ws.model.conditionalFormattings = [];
+      } catch(_) {}
+
+      // Helper style
+      const RED  = { fill:{ type:'pattern', pattern:'solid', bgColor:{argb:'FFFF0000'}, fgColor:{argb:'FFFF0000'} } };
+      const GREEN= { fill:{ type:'pattern', pattern:'solid', bgColor:{argb:'FF00B050'}, fgColor:{argb:'FF00B050'} } };
+
+      // (b) Règles Débit : rouge si >= 220, vert sinon (<220)
+      debitRefs.forEach(ref=>{
+        ws.addConditionalFormatting({
+          ref,
+          rules: [
+            { type:'cellIs', operator:'greaterThanOrEqual', formulae:[String(DEBIT_THRESHOLD)], style: RED  },
+            { type:'cellIs', operator:'lessThan',            formulae:[String(DEBIT_THRESHOLD)], style: GREEN}
+          ]
+        });
+      });
+
+      // (c) Règles pH : rouge si <= 5.5, rouge si >= 8.5, vert si entre 5.5 et 8.5
+      phRefs.forEach(ref=>{
+        ws.addConditionalFormatting({
+          ref,
+          rules: [
+            { type:'cellIs', operator:'lessThanOrEqual', formulae:[String(PH_MIN)], style: RED },
+          ]
+        });
+        ws.addConditionalFormatting({
+          ref,
+          rules: [
+            { type:'cellIs', operator:'greaterThanOrEqual', formulae:[String(PH_MAX)], style: RED },
+          ]
+        });
+        // vert pour la zone conforme (strictement entre)
+        ws.addConditionalFormatting({
+          ref,
+          rules: [
+            { type:'expression', formulae:[`AND(${ref.split(':')[0]}>${PH_MIN},${ref.split(':')[0]}<${PH_MAX})`], style: GREEN }
+          ]
+        });
       });
 
       // 4) export
       const buf=await wb.xlsx.writeBuffer();
-      saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'export_dep_ph_modele.xlsx');
+      saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'export_dep_ph_modele_MFC.xlsx');
     }
   </script>
 </body>
